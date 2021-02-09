@@ -1,0 +1,24 @@
+Package: vtrace
+Title: Vector Tracing Library
+Version: 0.0.0.9000
+Authors@R:
+    person(given = "Ming-Ho",
+           family = "Yee",
+           role = c("aut", "cre"),
+           email = "mh@mhyee.com")
+Description: This package traces functions that interact with vectors.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports:
+    instrumentr,
+    digest,
+    methods,
+    utils
+Remotes:
+    PRL-PRG/instrumentr
+RoxygenNote: 7.1.1
+SystemRequirements: C++11
+LinkingTo: instrumentr
+Suggests: 
+    testthat

@@ -1,0 +1,3 @@
+export(create_tracer)
+
+useDynLib(vtrace, .registration = TRUE, .fixes = "C_")
