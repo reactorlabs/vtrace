@@ -11,10 +11,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Imports:
-    instrumentr,
-    digest,
-    methods,
-    utils
+    instrumentr
 Remotes:
     PRL-PRG/instrumentr
 RoxygenNote: 7.1.1

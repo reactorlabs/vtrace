@@ -5,9 +5,6 @@
 #include <Rinternals.h>
 #include <stdlib.h> // for NULL
 #include "r_callbacks.h"
-//#include "r_utilities.h"
-//#include "r_init.h"
-//#include "r_data.h"
 
 static const R_CallMethodDef callMethods[] = {
     {"get_object_duplicate_callback", (DL_FUNC) &r_get_object_duplicate_callback, 0},
