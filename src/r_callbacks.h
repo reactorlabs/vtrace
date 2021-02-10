@@ -6,7 +6,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-SEXP r_get_object_duplicate_callback();
+SEXP r_object_duplicate_callback();
 SEXP r_application_unload_callback();
 #ifdef __cplusplus
 }

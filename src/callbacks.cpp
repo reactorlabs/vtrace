@@ -29,18 +29,14 @@ void object_duplicate_callback(ContextSPtr context,
 
         length.push_back(std::to_string(Rf_length(r_input)));
     }
-
 }
 
 void application_unload_callback(ContextSPtr context,
                                     ApplicationSPtr application) {
-
     std::ofstream file("duplication.csv");
 
     file << "input_addr,output_addr,type,length\n";
-
     for (int i = 0; i < input_addr.size(); ++i) {
         file << input_addr[i] << "," << output_addr[i] << "," << type[i] << "," << length[i] << "\n";
     }
-
 }
