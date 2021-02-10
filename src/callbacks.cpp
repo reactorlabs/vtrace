@@ -10,14 +10,49 @@ std::vector<std::string> type;
 std::vector<std::string> length;
 char buffer[1024];
 
+bool loaded = false;
+int in_library = 0;
+
+void closure_call_entry_callback(ContextSPtr context,
+                                    ApplicationSPtr application,
+                                    SEXP r_call,
+                                    SEXP r_op,
+                                    SEXP r_args,
+                                    SEXP r_rho) {
+    auto sym = CAR0(r_call);
+    if (TYPEOF(sym) == SYMSXP && TYPEOF(PRINTNAME(sym)) == CHARSXP &&
+        std::string(CHAR(PRINTNAME(CAR0(r_call)))) == "library.dynam") {
+        loaded = true;
+        in_library++;
+        std::cout << "Entering library: " << in_library << "\n";
+    }
+}
+
+void closure_call_exit_callback(ContextSPtr context,
+                                    ApplicationSPtr application,
+                                    SEXP r_call,
+                                    SEXP r_op,
+                                    SEXP r_args,
+                                    SEXP r_rho,
+                                    SEXP r_result) {
+    auto sym = CAR0(r_call);
+    if (TYPEOF(sym) == SYMSXP && TYPEOF(PRINTNAME(sym)) == CHARSXP &&
+        std::string(CHAR(PRINTNAME(CAR0(r_call)))) == "library.dynam") {
+        in_library--;
+        std::cout << "Exiting library: " << in_library << "\n";
+    }
+}
+
 void object_duplicate_callback(ContextSPtr context,
                                  ApplicationSPtr application,
                                  SEXP r_input,
                                  SEXP r_output,
                                  SEXP r_deep) {
+    if (!loaded || in_library != 0) return;
+
+    std::cout << "In library: " << in_library << "\n";
 
     auto t = TYPEOF(r_input);
-
     if (t == INTSXP || t == REALSXP || t == CPLXSXP || t == LGLSXP || t == RAWSXP || t == STRSXP || t == VECSXP) {
         sprintf(buffer, "%p", r_input);
         input_addr.push_back(std::string(buffer));

@@ -7,6 +7,8 @@
 #include "r_callbacks.h"
 
 static const R_CallMethodDef callMethods[] = {
+    {"closure_call_entry_callback", (DL_FUNC) &r_closure_call_entry_callback, 0},
+    {"closure_call_exit_callback", (DL_FUNC) &r_closure_call_exit_callback, 0},
     {"object_duplicate_callback", (DL_FUNC) &r_object_duplicate_callback, 0},
     {"application_unload_callback", (DL_FUNC) &r_application_unload_callback, 0},
     {NULL, NULL, 0}
