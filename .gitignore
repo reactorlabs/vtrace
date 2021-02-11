@@ -1,2 +1,4 @@
 *.o
 *.so
+vtrace*.tar.gz
+vtrace.Rcheck
