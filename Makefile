@@ -1,6 +1,7 @@
 R := R
 
-.PHONY: all build check clean document install uninstall install-devtools
+.PHONY: all build check clean install uninstall document lintr \
+	install-devtools install-lintr
 
 all: clean document build check install
 
@@ -15,14 +16,20 @@ clean:
 	rm -fr vtrace.Rcheck
 	rm -rf src/*.o src/*.so
 
-document: install-devtools
-	$(R) --quiet -e 'devtools::document()'
-
 install: clean
 	$(R) CMD INSTALL .
 
 uninstall:
 	$(R) --quiet -e 'remove.packages("vtrace")'
 
+document: install-devtools
+	$(R) --quiet -e 'devtools::document()'
+
+lintr: install-lintr
+	$(R) --quiet -e 'quit(status = length(print(lintr::lint_package())) != 0)'
+
 install-devtools:
 	$(R) --quiet -e 'if (!require("devtools")) install.packages("devtools", repos="https://cloud.r-project.org")'
+
+install-lintr:
+	$(R) --quiet -e 'if (!require("lintr")) install.packages("lintr", repos="https://cloud.r-project.org")'
