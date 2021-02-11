@@ -1,5 +1,8 @@
 R := R
 
+SOURCEDIR := src
+SOURCES := $(shell find $(SOURCEDIR) -name '*.cpp')
+
 .PHONY: all build check clean install uninstall document lintr \
 	install-devtools install-lintr
 

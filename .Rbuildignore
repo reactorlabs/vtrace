@@ -1,0 +1,3 @@
+^\.lintr$
+^\.ycm_extra_conf.py$
+^Makefile$
