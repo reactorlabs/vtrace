@@ -20,11 +20,12 @@ void closure_call_entry_callback(ContextSPtr context,
                                     SEXP r_args,
                                     SEXP r_rho) {
     auto sym = CAR0(r_call);
-    if (TYPEOF(sym) == SYMSXP && TYPEOF(PRINTNAME(sym)) == CHARSXP &&
-        std::string(CHAR(PRINTNAME(CAR0(r_call)))) == "library.dynam") {
-        loaded = true;
+    if (TYPEOF(sym) == SYMSXP && TYPEOF(PRINTNAME(sym)) == CHARSXP) {
+//        std::string(CHAR(PRINTNAME(CAR0(r_call)))) == "library.dynam") {
+//        loaded = true;
         in_library++;
-        std::cout << "Entering library: " << in_library << "\n";
+        auto name = std::string(CHAR(PRINTNAME(CAR0(r_call))));
+        std::cout << "Entering: " << in_library << " " << name << "\n";
     }
 }
 
@@ -36,10 +37,11 @@ void closure_call_exit_callback(ContextSPtr context,
                                     SEXP r_rho,
                                     SEXP r_result) {
     auto sym = CAR0(r_call);
-    if (TYPEOF(sym) == SYMSXP && TYPEOF(PRINTNAME(sym)) == CHARSXP &&
-        std::string(CHAR(PRINTNAME(CAR0(r_call)))) == "library.dynam") {
+    if (TYPEOF(sym) == SYMSXP && TYPEOF(PRINTNAME(sym)) == CHARSXP) {
+        // std::string(CHAR(PRINTNAME(CAR0(r_call)))) == "library.dynam") {
         in_library--;
-        std::cout << "Exiting library: " << in_library << "\n";
+        auto name = std::string(CHAR(PRINTNAME(CAR0(r_call))));
+        std::cout << "Exiting: " << in_library << " " << name << "\n";
     }
 }
 
@@ -48,9 +50,9 @@ void object_duplicate_callback(ContextSPtr context,
                                  SEXP r_input,
                                  SEXP r_output,
                                  SEXP r_deep) {
-    if (!loaded || in_library != 0) return;
+//    if (!loaded || in_library != 0) return;
 
-    std::cout << "In library: " << in_library << "\n";
+    std::cout << "In: " << in_library << "\n";
 
     auto t = TYPEOF(r_input);
     if (t == INTSXP || t == REALSXP || t == CPLXSXP || t == LGLSXP || t == RAWSXP || t == STRSXP || t == VECSXP) {

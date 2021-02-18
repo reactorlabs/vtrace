@@ -6,7 +6,7 @@ create_tracer <- function() {
         closure_call_exit_callback = .Call(C_closure_call_exit_callback),
         object_duplicate_callback = .Call(C_object_duplicate_callback),
         application_unload_callback = .Call(C_application_unload_callback),
-        functions = character(0)
+        functions = c("base::library")
     )
     context
 }

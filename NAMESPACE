@@ -2,4 +2,5 @@
 
 export(create_tracer)
 importFrom(instrumentr,create_context)
+importFrom(instrumentr,get_name)
 useDynLib(vtrace, .registration = TRUE, .fixes = "C_")
