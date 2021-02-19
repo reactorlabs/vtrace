@@ -207,6 +207,7 @@ void gc_unmark_callback(ContextSPtr context,
                         ApplicationSPtr application,
                         SEXP r_object) {
     if (TYPEOF(r_object) == CLOSXP) {
-        function_table.remove(r_object);
+        // WARN: causes segfault when run
+        //function_table.remove(r_object);
     }
 }
