@@ -36,6 +36,16 @@ class Stack {
         return stack_[stack_.size() - n];
     }
 
+    Call* topmost_call() {
+        for (auto it = stack_.rbegin(); it != stack_.rend(); ++it) {
+            if (it->is_call()) {
+                return it->as_call();
+            }
+        }
+        return nullptr;
+    }
+
+
   private:
     std::vector<StackFrame> stack_;
 };

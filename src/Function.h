@@ -1,6 +1,8 @@
 #ifndef VTRACE_FUNCTION_H
 #define VTRACE_FUNCTION_H
 
+#include <R.h>
+#include <Rinternals.h>
 #include <string>
 
 class Function {
@@ -89,6 +91,21 @@ class Function {
         }
 
         return qualified;
+    }
+
+    std::string get_definition() const {
+        SEXP def = Rf_eval(Rf_lang2(Rf_install("deparse"), r_op_), R_BaseEnv);
+        std::string to_ret = "";
+        for (int i = 0; i < Rf_length(def); ++i) {
+            auto name = STRING_ELT(def, i);
+            if (name == NA_STRING) {
+                to_ret.append("NA");
+            } else {
+                to_ret.append(CHAR(name));
+                to_ret.append("\n");
+            }
+        }
+        return to_ret;
     }
 
   private:

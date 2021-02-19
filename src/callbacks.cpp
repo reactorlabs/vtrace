@@ -11,6 +11,7 @@ std::vector<std::string> input_addr;
 std::vector<std::string> output_addr;
 std::vector<std::string> type;
 std::vector<std::string> length;
+std::vector<std::string> top_function;
 char buffer[1024];
 
 bool loaded = false;
@@ -87,7 +88,7 @@ void object_duplicate_callback(ContextSPtr context,
                                SEXP r_input,
                                SEXP r_output,
                                SEXP r_deep) {
-    //    if (!loaded || in_library != 0) return;
+    if (in_library != 0) return;
 
     // std::cout << "In: " << in_library << "\n";
 
@@ -103,6 +104,16 @@ void object_duplicate_callback(ContextSPtr context,
         type.push_back(std::string(type2char(TYPEOF(r_input))));
 
         length.push_back(std::to_string(Rf_length(r_input)));
+
+        if (auto *call = stack.topmost_call()) {
+            auto name = std::string(call->get_function()->get_qualified_name());
+            if (name == "<unknown>") {
+                name = call->get_function()->get_definition();
+            }
+            top_function.push_back(name);
+        } else {
+            top_function.push_back("NA");
+        }
     }
 }
 
@@ -110,10 +121,10 @@ void application_unload_callback(ContextSPtr context,
                                  ApplicationSPtr application) {
     std::ofstream file("duplication.csv");
 
-    file << "input_addr,output_addr,type,length\n";
+    file << "input_addr,output_addr,type,length,fun\n";
     for (int i = 0; i < input_addr.size(); ++i) {
         file << input_addr[i] << "," << output_addr[i] << "," << type[i] << ","
-             << length[i] << "\n";
+             << length[i] << "," << top_function[i] << "\n";
     }
 }
 
