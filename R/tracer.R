@@ -70,5 +70,5 @@ application_detach_callback <- function(context, application) {
 add_package <- function(pkg_name, lib_name) {
     cat("ADD_PACKAGE: ", pkg_name, "\n")
     force_lazy_loaded_functions(paste0("package:", pkg_name))
-    .Call("C_add_package", PACKAGE="vtrace")
+    .Call(C_add_package, PACKAGE="vtrace")
 }
