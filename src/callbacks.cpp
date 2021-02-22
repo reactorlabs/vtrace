@@ -3,6 +3,7 @@
 #include <iostream>
 #include "Rinternals.h"
 #include "callbacks.h"
+#include "r_callbacks.h"
 
 #include "FunctionTable.h"
 #include "Stack.h"
@@ -23,6 +24,11 @@ Stack stack;
 bool is_library_function(const Function* function) {
     return function->get_name() == "library" &&
            function->get_package_name() == "base";
+}
+
+SEXP r_add_package() {
+    function_table.update_packages();
+    return R_NilValue;
 }
 
 void closure_call_entry_callback(ContextSPtr context,

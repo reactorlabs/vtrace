@@ -8,18 +8,7 @@
 class FunctionTable {
   public:
     FunctionTable() {
-        for (SEXP r_rho = R_GlobalEnv; r_rho != R_EmptyEnv;
-             r_rho = ENCLOS(r_rho)) {
-            SEXP r_namespace = infer_namespace_(r_rho);
-
-            SEXP r_names = R_lsInternal(r_namespace, TRUE);
-
-            for (int i = 0; i < Rf_length(r_names); ++i) {
-                const char* name = CHAR(STRING_ELT(r_names, i));
-                SEXP r_obj = Rf_findVarInFrame(r_namespace, Rf_install(name));
-                update(r_obj, name, r_namespace);
-            }
-        }
+        update_packages();
     }
 
     ~FunctionTable() {
@@ -69,8 +58,35 @@ class FunctionTable {
         update_name_(function, name, r_rho);
     }
 
+    void update_packages() {
+        SEXP package_names = R_lsInternal(R_NamespaceRegistry, TRUE);
+        for (int i = 0; i < Rf_length(package_names); ++i) {
+            const char* name = CHAR(STRING_ELT(package_names, i));
+            SEXP r_obj = Rf_findVarInFrame(R_NamespaceRegistry, Rf_install(name));
+
+            if (TYPEOF(r_obj) != ENVSXP) {
+                continue;
+            }
+            if (seen_packages_.find(r_obj) != seen_packages_.end()) {
+                continue;
+            } else {
+                seen_packages_.insert(r_obj);
+            }
+
+            // std::cout << "FunctionTable handled: " << name << "\n";
+
+            SEXP r_names = R_lsInternal(R_NamespaceRegistry, TRUE);
+            for (int i = 0; i < Rf_length(r_names); ++i) {
+                const char* name = CHAR(STRING_ELT(r_names, i));
+                SEXP r_fun = Rf_findVarInFrame(r_obj, Rf_install(name));
+                update(r_fun, name, r_obj);
+            }
+        }
+    }
+
   private:
     std::unordered_map<SEXP, Function*> table_;
+    std::unordered_set<SEXP> seen_packages_;
 
     SEXP unwrap_function_(SEXP r_value) {
         SEXP r_closure = R_NilValue;
