@@ -61,8 +61,8 @@ class FunctionTable {
     void update_packages() {
         SEXP package_names = R_lsInternal(R_NamespaceRegistry, TRUE);
         for (int i = 0; i < Rf_length(package_names); ++i) {
-            const char* name = CHAR(STRING_ELT(package_names, i));
-            SEXP r_obj = Rf_findVarInFrame(R_NamespaceRegistry, Rf_install(name));
+            const char* pkg_name = CHAR(STRING_ELT(package_names, i));
+            SEXP r_obj = Rf_findVarInFrame(R_NamespaceRegistry, Rf_install(pkg_name));
 
             if (TYPEOF(r_obj) != ENVSXP) {
                 continue;
@@ -73,9 +73,7 @@ class FunctionTable {
                 seen_packages_.insert(r_obj);
             }
 
-            // std::cout << "FunctionTable handled: " << name << "\n";
-
-            SEXP r_names = R_lsInternal(R_NamespaceRegistry, TRUE);
+            SEXP r_names = R_lsInternal(r_obj, TRUE);
             for (int i = 0; i < Rf_length(r_names); ++i) {
                 const char* name = CHAR(STRING_ELT(r_names, i));
                 SEXP r_fun = Rf_findVarInFrame(r_obj, Rf_install(name));
