@@ -13,6 +13,7 @@ std::vector<std::string> output_addr;
 std::vector<std::string> type;
 std::vector<std::string> length;
 std::vector<std::string> top_function;
+std::vector<std::string> function_hash;
 char buffer[1024];
 
 bool loaded = false;
@@ -113,12 +114,11 @@ void object_duplicate_callback(ContextSPtr context,
 
         if (auto *call = stack.topmost_call()) {
             auto name = std::string(call->get_function()->get_qualified_name());
-            if (name == "<unknown>") {
-                name = call->get_function()->get_definition();
-            }
             top_function.push_back(name);
+            function_hash.push_back(call->get_function()->get_hash());
         } else {
             top_function.push_back("NA");
+            function_hash.push_back("NA");
         }
     }
 }
@@ -127,11 +127,16 @@ void application_unload_callback(ContextSPtr context,
                                  ApplicationSPtr application) {
     std::ofstream file("duplication.csv");
 
-    file << "input_addr,output_addr,type,length,fun\n";
+    file << "input_addr,output_addr,type,length,fun,fun_hash\n";
     for (int i = 0; i < input_addr.size(); ++i) {
         file << input_addr[i] << "," << output_addr[i] << "," << type[i] << ","
-             << length[i] << "," << top_function[i] << "\n";
+             << length[i] << "," << top_function[i] << "," << function_hash[i] << "\n";
     }
+    file.close();
+
+    std::ofstream file2("duplication_functions.csv");
+    function_table.dump_table_to_csv(file2);
+    file2.close();
 }
 
 void variable_definition_callback(ContextSPtr context,
@@ -224,6 +229,7 @@ void gc_unmark_callback(ContextSPtr context,
                         ApplicationSPtr application,
                         SEXP r_object) {
     if (TYPEOF(r_object) == CLOSXP) {
+        function_table.lookup(r_object)->finalize();
         // WARN: causes segfault when run
         //function_table.remove(r_object);
     }

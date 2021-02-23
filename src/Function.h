@@ -3,7 +3,10 @@
 
 #include <R.h>
 #include <Rinternals.h>
+#include <Rdyntrace.h>
 #include <string>
+
+#include "picosha2.h"
 
 class Function {
   public:
@@ -93,8 +96,47 @@ class Function {
         return qualified;
     }
 
-    std::string get_definition() const {
-        SEXP def = Rf_eval(Rf_lang2(Rf_install("deparse"), r_op_), R_BaseEnv);
+    std::string get_definition() {
+        if (definition_.empty()) {
+            definition_ = serialize_r_expression(r_op_);
+        }
+        return definition_;
+    }
+
+    std::string get_hash() {
+        if (hash_.empty()) {
+            hash_ = set_hash();
+        }
+        return hash_;
+    }
+
+    void finalize() {
+        finalized = true;
+    }
+
+  private:
+    bool finalized = false;
+    SEXP r_op_;
+    SEXPTYPE type_;
+    std::string name_;
+    std::string package_name_;
+    std::string definition_;
+    std::string hash_;
+
+    std::string set_hash() {
+        if (finalized) {
+            return "<finalized>";
+        }
+        return picosha2::hash256_hex_string(get_definition());
+    }
+
+    std::string serialize_r_expression(SEXP e) {
+        if (finalized) {
+            return "<finalized>";
+        }
+        SEXP deparse_call = Rf_lang3(Rf_install("deparse"), r_op_, ScalarInteger(60));
+        SET_TAG(CDDR(deparse_call), Rf_install("nlines"));
+        SEXP def = Rf_eval(deparse_call, R_BaseEnv);
         std::string to_ret = "";
         for (int i = 0; i < Rf_length(def); ++i) {
             auto name = STRING_ELT(def, i);
@@ -107,12 +149,6 @@ class Function {
         }
         return to_ret;
     }
-
-  private:
-    SEXP r_op_;
-    SEXPTYPE type_;
-    std::string name_;
-    std::string package_name_;
 };
 
 #endif /* VTRACE_FUNCTION_H */

@@ -56,6 +56,8 @@ class FunctionTable {
         }
 
         update_name_(function, name, r_rho);
+        // function->get_definition();
+        // function->get_hash();
     }
 
     void update_packages() {
@@ -79,6 +81,14 @@ class FunctionTable {
                 SEXP r_fun = Rf_findVarInFrame(r_obj, Rf_install(name));
                 update(r_fun, name, r_obj);
             }
+        }
+    }
+
+    void dump_table_to_csv(std::ofstream& file) {
+        file << "hash,definition\n";
+        for (const auto& it : table_) {
+            auto fun = it.second;
+            file << fun->get_hash() << "," << fun->get_definition() << "\n";
         }
     }
 
