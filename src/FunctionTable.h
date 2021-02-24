@@ -64,7 +64,8 @@ class FunctionTable {
         SEXP package_names = R_lsInternal(R_NamespaceRegistry, TRUE);
         for (int i = 0; i < Rf_length(package_names); ++i) {
             const char* pkg_name = CHAR(STRING_ELT(package_names, i));
-            SEXP r_obj = Rf_findVarInFrame(R_NamespaceRegistry, Rf_install(pkg_name));
+            SEXP r_obj =
+                Rf_findVarInFrame(R_NamespaceRegistry, Rf_install(pkg_name));
 
             if (TYPEOF(r_obj) != ENVSXP) {
                 continue;
@@ -86,9 +87,11 @@ class FunctionTable {
 
     void dump_table_to_csv(std::ofstream& file) {
         file << "hash,definition\n";
-        for (const auto& it : table_) {
+        for (const auto& it: table_) {
             auto fun = it.second;
-            file << fun->get_hash() << "," << fun->get_definition() << "\n";
+            if (fun->is_called()) {
+                file << fun->get_hash() << "," << fun->get_definition() << "\n";
+            }
         }
     }
 

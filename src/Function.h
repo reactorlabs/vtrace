@@ -10,7 +10,13 @@
 
 class Function {
   public:
-    explicit Function(SEXP r_op): r_op_(r_op) {
+    const std::string NotComputed = "<not computed>";
+
+    explicit Function(SEXP r_op)
+        : r_op_(r_op)
+        , definition_(NotComputed)
+        , hash_(NotComputed)
+        , called_(0) {
         type_ = TYPEOF(r_op);
 
         if (type_ == BUILTINSXP || type_ == SPECIALSXP) {
@@ -96,18 +102,22 @@ class Function {
         return qualified;
     }
 
-    std::string get_definition() {
-        if (definition_.empty()) {
-            definition_ = serialize_r_expression(r_op_);
-        }
+    const std::string& get_definition() const {
         return definition_;
     }
 
-    std::string get_hash() {
-        if (hash_.empty()) {
-            hash_ = set_hash();
-        }
+    const std::string& get_hash() const {
         return hash_;
+    }
+
+    void called() {
+        set_definition_();
+        set_hash_();
+        ++called_;
+    }
+
+    bool is_called() const {
+        return called_;
     }
 
     void finalize() {
@@ -122,32 +132,36 @@ class Function {
     std::string package_name_;
     std::string definition_;
     std::string hash_;
+    int called_;
 
-    std::string set_hash() {
-        if (finalized) {
-            return "<finalized>";
+    const std::string& set_hash_() {
+        if (hash_ == NotComputed) {
+            hash_ = picosha2::hash256_hex_string(set_definition_());
         }
-        return picosha2::hash256_hex_string(get_definition());
+
+        return hash_;
     }
 
-    std::string serialize_r_expression(SEXP e) {
-        if (finalized) {
-            return "<finalized>";
-        }
-        SEXP deparse_call = Rf_lang3(Rf_install("deparse"), r_op_, ScalarInteger(60));
-        SET_TAG(CDDR(deparse_call), Rf_install("nlines"));
-        SEXP def = Rf_eval(deparse_call, R_BaseEnv);
-        std::string to_ret = "";
-        for (int i = 0; i < Rf_length(def); ++i) {
-            auto name = STRING_ELT(def, i);
-            if (name == NA_STRING) {
-                to_ret.append("NA");
-            } else {
-                to_ret.append(CHAR(name));
-                to_ret.append("\n");
+    const std::string& set_definition_() {
+        if (definition_ == NotComputed) {
+            SEXP deparse_call =
+                Rf_lang3(Rf_install("deparse"), r_op_, ScalarInteger(60));
+            SET_TAG(CDDR(deparse_call), Rf_install("nlines"));
+            SEXP def = Rf_eval(deparse_call, R_BaseEnv);
+
+            std::string to_ret = "";
+            for (int i = 0; i < Rf_length(def); ++i) {
+                auto name = STRING_ELT(def, i);
+                if (name == NA_STRING) {
+                    to_ret.append("NA");
+                } else {
+                    to_ret.append(CHAR(name));
+                    to_ret.append("\n");
+                }
             }
+            definition_ = to_ret;
         }
-        return to_ret;
+        return definition_;
     }
 };
 
