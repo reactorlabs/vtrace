@@ -39,6 +39,7 @@ void closure_call_entry_callback(ContextSPtr context,
                                  SEXP r_args,
                                  SEXP r_rho) {
     Function* function = function_table.lookup(r_op);
+    function -> called();
 
     StackFrame frame =
         StackFrame::from_call(new Call(function, r_call, r_args, r_rho));
