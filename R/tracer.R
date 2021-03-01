@@ -42,8 +42,8 @@ trace_code <- function(code,
 
 
 force_lazy_loaded_functions <- function(packages) {
-    for(package in packages) {
-        if(startsWith(package, "package:")) {
+    for (package in packages) {
+        if (startsWith(package, "package:")) {
             ns <- getNamespace(substr(package, 9, nchar(package)))
             names <- ls(ns, all.names = TRUE)
             Map(function(name) get(name, envir = ns), names)
@@ -54,14 +54,14 @@ force_lazy_loaded_functions <- function(packages) {
 }
 
 application_load_callback <- function(context, application) {
-    installed_packages <- installed.packages()[,1]
+    installed_packages <- installed.packages()[, 1]
     for (pkg in installed_packages) {
         setHook(packageEvent(pkg, "onLoad"), add_package, "prepend")
     }
 }
 
 application_detach_callback <- function(context, application) {
-    installed_packages <- installed.packages()[,1]
+    installed_packages <- installed.packages()[, 1]
     for (pkg in installed_packages) {
         setHook(packageEvent(pkg, "onLoad"), NULL, "replace")
     }
