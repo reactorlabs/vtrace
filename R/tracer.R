@@ -81,7 +81,7 @@ force_lazy_loaded_functions <- function(packages) {
 # packages are accessible and we want the tracer to be aware of them.
 application_load_callback <- function(context, application) {
     installed_packages <- installed.packages()[, 1]
-    for (pkg in installed.packages) {
+    for (pkg in installed_packages) {
         # packageEvent creates a hook name, derived from the package name
         setHook(packageEvent(pkg, "onLoad"), add_package, "prepend")
     }
