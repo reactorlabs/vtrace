@@ -8,12 +8,14 @@
 
 #include "picosha2.h"
 
+static const std::string NotComputed = "<not computed>";
+static int counter = 0;
+
 class Function {
   public:
-    const std::string NotComputed = "<not computed>";
-
     explicit Function(SEXP r_op)
-        : r_op_(r_op)
+        : id_(counter++)
+        , r_op_(r_op)
         , definition_(NotComputed)
         , hash_(NotComputed)
         , called_(0) {
@@ -43,6 +45,10 @@ class Function {
                     CHAR(STRING_ELT(R_NamespaceEnvSpec(r_lexenv), 0));
             }
         }
+    }
+
+    int get_id() {
+        return id_;
     }
 
     SEXP get_op() {
@@ -125,6 +131,7 @@ class Function {
     }
 
   private:
+    int id_;
     bool finalized = false;
     SEXP r_op_;
     SEXPTYPE type_;

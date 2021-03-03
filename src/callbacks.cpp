@@ -13,7 +13,7 @@ std::vector<std::string> output_addr;
 std::vector<std::string> type;
 std::vector<std::string> length;
 std::vector<std::string> top_function;
-std::vector<std::string> function_hash;
+std::vector<std::string> function_id;
 char buffer[1024];
 
 bool loaded = false;
@@ -46,12 +46,6 @@ void closure_call_entry_callback(ContextSPtr context,
 
     stack.push(frame);
 
-    if (!in_library) {
-        std::cout << "Entering: "
-                  << "[" << in_library << "]" << function->get_qualified_name()
-                  << "\n";
-    }
-
     if (is_library_function(function)) {
         ++in_library;
     }
@@ -83,12 +77,6 @@ void closure_call_exit_callback(ContextSPtr context,
         }
         delete call;
     }
-
-    if (!in_library) {
-        std::cout << "Exiting: "
-                  << "[" << in_library << "]" << function->get_qualified_name()
-                  << "\n";
-    }
 }
 
 void object_duplicate_callback(ContextSPtr context,
@@ -97,8 +85,6 @@ void object_duplicate_callback(ContextSPtr context,
                                SEXP r_output,
                                SEXP r_deep) {
     if (in_library != 0) return;
-
-    // std::cout << "In: " << in_library << "\n";
 
     auto t = TYPEOF(r_input);
     if (t == INTSXP || t == REALSXP || t == CPLXSXP || t == LGLSXP ||
@@ -116,10 +102,10 @@ void object_duplicate_callback(ContextSPtr context,
         if (auto *call = stack.topmost_call()) {
             auto name = std::string(call->get_function()->get_qualified_name());
             top_function.push_back(name);
-            function_hash.push_back(call->get_function()->get_hash());
+            function_id.push_back(std::to_string(call->get_function()->get_id()));
         } else {
             top_function.push_back("NA");
-            function_hash.push_back("NA");
+            function_id.push_back("NA");
         }
     }
 }
@@ -128,10 +114,10 @@ void application_unload_callback(ContextSPtr context,
                                  ApplicationSPtr application) {
     std::ofstream file("duplication.csv");
 
-    file << "input_addr,output_addr,type,length,fun,fun_hash\n";
+    file << "input_addr,output_addr,type,length,fun,fun_id\n";
     for (int i = 0; i < input_addr.size(); ++i) {
         file << input_addr[i] << "," << output_addr[i] << "," << type[i] << ","
-             << length[i] << "," << top_function[i] << "," << function_hash[i] << "\n";
+             << length[i] << "," << top_function[i] << "," << function_id[i] << "\n";
     }
     file.close();
 

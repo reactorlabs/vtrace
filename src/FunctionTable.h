@@ -3,6 +3,9 @@
 
 #include <R.h>
 #include <Rinternals.h>
+#include <unordered_map>
+#include <unordered_set>
+
 #include "Function.h"
 
 class FunctionTable {
@@ -86,11 +89,12 @@ class FunctionTable {
     }
 
     void dump_table_to_csv(std::ofstream& file) {
-        file << "hash,definition\n";
+        file << "id,name,hash,definition\n";
         for (const auto& it: table_) {
             auto fun = it.second;
             if (fun->is_called()) {
-                file << fun->get_hash() << "," << fun->get_definition() << "\n";
+                file << fun->get_id() << "," << fun->get_name() << ","
+                     << fun->get_hash() << "," << fun->get_definition() << "\n";
             }
         }
     }
