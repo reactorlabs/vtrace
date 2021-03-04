@@ -3,6 +3,7 @@
 
 #include <R.h>
 #include <Rinternals.h>
+#include <fstream>
 #include <unordered_map>
 #include <unordered_set>
 

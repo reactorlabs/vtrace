@@ -6,6 +6,7 @@
 #include "r_callbacks.h"
 
 #include "FunctionTable.h"
+#include "RVectorTable.h"
 #include "Stack.h"
 
 std::vector<std::string> input_addr;
@@ -20,6 +21,7 @@ bool loaded = false;
 int in_library = 0;
 
 FunctionTable function_table;
+RVectorTable vector_table;
 Stack stack;
 
 bool is_library_function(const Function* function) {
@@ -89,11 +91,14 @@ void object_duplicate_callback(ContextSPtr context,
     auto t = TYPEOF(r_input);
     if (t == INTSXP || t == REALSXP || t == CPLXSXP || t == LGLSXP ||
         t == RAWSXP || t == STRSXP || t == VECSXP) {
+        // older stuff, record data about vector duplication
         sprintf(buffer, "%p", r_input);
-        input_addr.push_back(std::string(buffer));
+        std::string input = std::string(buffer);
+        input_addr.push_back(input);
 
         sprintf(buffer, "%p", r_output);
-        output_addr.push_back(std::string(buffer));
+        std::string output = std::string(buffer);
+        output_addr.push_back(output);
 
         type.push_back(std::string(type2char(TYPEOF(r_input))));
 
@@ -107,6 +112,19 @@ void object_duplicate_callback(ContextSPtr context,
             top_function.push_back("NA");
             function_id.push_back("NA");
         }
+
+        // newer stuff, create vector objects and add to vector table
+        RVector* src = vector_table.lookup_by_addr(input);
+        RVector* dst = vector_table.lookup_by_addr(output);
+        if (!src) {
+            src = new RVector(input, TYPEOF(r_input), Rf_length(r_input));
+            vector_table.insert(src);
+        }
+        if (!dst) {
+            dst = new RVector(output, TYPEOF(r_input), Rf_length(r_input));
+            vector_table.insert(dst);
+        }
+        dst->set_copy_of(src->get_id());
     }
 }
 
@@ -124,6 +142,11 @@ void application_unload_callback(ContextSPtr context,
     std::ofstream file2("duplication_functions.csv");
     function_table.dump_table_to_csv(file2);
     file2.close();
+
+
+    std::ofstream file3("duplication_vectors.csv");
+    vector_table.dump_table_to_csv(file3);
+    file3.close();
 }
 
 void variable_definition_callback(ContextSPtr context,
@@ -208,6 +231,8 @@ void gc_allocation_callback(ContextSPtr context,
                             ApplicationSPtr application,
                             SEXP r_object) {
     if (TYPEOF(r_object) == CLOSXP) {
+        // TODO: check if function was already inserted?
+        // Are functions gc'd? Are addresses reused for functions?
         function_table.insert(r_object);
     }
 }

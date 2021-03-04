@@ -9,12 +9,12 @@
 #include "picosha2.h"
 
 static const std::string NotComputed = "<not computed>";
-static int counter = 0;
+static int fun_counter = 0;
 
 class Function {
   public:
     explicit Function(SEXP r_op)
-        : id_(counter++)
+        : id_(fun_counter++)
         , r_op_(r_op)
         , definition_(NotComputed)
         , hash_(NotComputed)
@@ -47,11 +47,11 @@ class Function {
         }
     }
 
-    int get_id() {
+    int get_id() const {
         return id_;
     }
 
-    SEXP get_op() {
+    SEXP get_op() const {
         return r_op_;
     }
 
@@ -151,6 +151,7 @@ class Function {
 
     const std::string& set_definition_() {
         if (definition_ == NotComputed) {
+            // TODO: which function definition is too long???
             SEXP deparse_call =
                 Rf_lang3(Rf_install("deparse"), r_op_, ScalarInteger(60));
             SET_TAG(CDDR(deparse_call), Rf_install("nlines"));
