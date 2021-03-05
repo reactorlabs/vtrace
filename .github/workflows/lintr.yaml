@@ -1,0 +1,30 @@
+name: lintr
+
+on:
+  - pull_request
+  - push
+  - workflow_dispatch
+
+jobs:
+  lintr:
+    name: Run lintr
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install libcurl
+        run: sudo apt-get install libcurl4-openssl-dev
+
+      - name: Install R
+        uses: r-lib/actions/setup-r@v1
+
+      - name: Install dependencies
+        run: if (!require("lintr")) install.packages("lintr", repos="https://cloud.r-project.org")
+        shell: Rscript {0}
+
+      - name: Lint
+        run: quit(status = length(print(lintr::lint_package())) != 0)
+        shell: Rscript {0}
