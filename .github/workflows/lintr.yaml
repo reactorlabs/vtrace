@@ -9,7 +9,12 @@ jobs:
   lintr:
     name: Run lintr
 
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+        rversion: [4.0.2]
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout code
@@ -20,8 +25,20 @@ jobs:
 
       - name: Install R
         uses: r-lib/actions/setup-r@v1
+        with:
+          r-version: ${{ matrix.rversion }}
+
+      - name: Cache dependencies
+        id: cache-deps
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: ${{ matrix.os }}-R-${{ matrix.rversion }}
+          restore-keys: |
+            ${{ matrix.os }}-
 
       - name: Install dependencies
+        if: steps.cache-deps.cache-hit != 'true'
         run: if (!require("lintr")) install.packages("lintr", repos="https://cloud.r-project.org")
         shell: Rscript {0}
 
