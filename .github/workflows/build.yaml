@@ -88,8 +88,8 @@ jobs:
             ${{ matrix.os }}-injectr-
             ${{ matrix.os }}-
 
+        # Caching saves the build step, but we can't skip because we need to install
       - name: Build injectr
-        if: steps.cache-injectr.outputs.cache-hit != 'true'
         run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL injectr
 
       - name: Checkout instrumentr
@@ -115,15 +115,14 @@ jobs:
             ${{ matrix.os }}-instrumentr-
             ${{ matrix.os }}-
 
+        # Caching saves the build step, but we can't skip because we need to install
       - name: Build instrumentr
-        if: steps.cache-instrumentr.outputs.cache-hit != 'true'
         run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL instrumentr
-    
 
-      # - name: Checkout vtrace
-      #   uses: actions/checkout@v2
-      #   with:
-      #     path: vtrace
-      #
-      # - name: Build vtrace
-      #   run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL vtrace
+      - name: Checkout vtrace
+        uses: actions/checkout@v2
+        with:
+          path: vtrace
+
+      - name: Build vtrace
+        run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL vtrace
