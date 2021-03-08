@@ -47,15 +47,16 @@ jobs:
         run: |
           cd R-dyntrace
           git log -1 --format='%H'
-          echo "::set-output name=hash::$(git log -1 --format='%H')"
+          echo "::set-output name=rdt-hash::$(git log -1 --format='%H')"
 
       - name: Cache R-dyntrace
         id: cache-rdt
         uses: actions/cache@v2
         with:
           path: ${{ github.workspace }}/R-dyntrace
-          key: ${{ matrix.os }}-${{ steps.get-rdt-hash.outputs.hash }}
+          key: ${{ matrix.os }}-R-dyntrace-${{ steps.get-rdt-hash.outputs.rdt-hash }}
           restore-keys: |
+            ${{ matrix.os }}-${{ steps.get-rdt-hash.outputs.rdt-hash }}
             ${{ matrix.os }}-
 
       - name: Build R-dyntrace
@@ -63,6 +64,34 @@ jobs:
         run: |
           cd R-dyntrace
           ./build
+
+      - name: Checkout injectr
+        uses: actions/checkout@v2
+        with:
+          repository: PRL-PRG/injectr
+          path: injectr
+
+      - name: Get injectr hash
+        id: get-injectr-hash
+        run: |
+          cd injectr
+          git log -1 --format='%H'
+          echo "::set-output name=injectr-hash::$(git log -1 --format='%H')"
+
+      - name: Cache injectr
+        id: cache-injectr
+        uses: actions/cache@v2
+        with:
+          path: ${{ github.workspace }}/injectr
+          key: ${{ matrix.os }}-injectr-${{ steps.get-injectr-hash.outputs.injectr-hash }}
+          restore-keys: |
+            ${{ matrix.os }}-${{ steps.get-injectr-hash.outputs.injectr-hash }}
+            ${{ matrix.os }}-
+
+      - name: Build injectr
+        if: steps.cache-injectr.cache-hit != 'true'
+        run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL injectr
+    
 
       # - name: Checkout vtrace
       #   uses: actions/checkout@v2
