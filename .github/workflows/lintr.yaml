@@ -40,7 +40,7 @@ jobs:
             ${{ matrix.os }}-
 
       - name: Install lintr
-        if: steps.cache-deps.cache-hit != 'true'
+        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: if (!require("lintr")) install.packages("lintr", repos="https://cloud.r-project.org")
         shell: Rscript {0}
 

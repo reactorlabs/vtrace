@@ -56,11 +56,10 @@ jobs:
           path: ${{ github.workspace }}/R-dyntrace
           key: ${{ matrix.os }}-R-dyntrace-${{ steps.get-rdt-hash.outputs.rdt-hash }}
           restore-keys: |
-            ${{ matrix.os }}-${{ steps.get-rdt-hash.outputs.rdt-hash }}
             ${{ matrix.os }}-
 
       - name: Build R-dyntrace
-        if: steps.cache-rdt.cache-hit != 'true'
+        if: steps.cache-rdt.outputs.cache-hit != 'true'
         run: |
           cd R-dyntrace
           ./build
@@ -85,11 +84,10 @@ jobs:
           path: ${{ github.workspace }}/injectr
           key: ${{ matrix.os }}-injectr-${{ steps.get-injectr-hash.outputs.injectr-hash }}
           restore-keys: |
-            ${{ matrix.os }}-${{ steps.get-injectr-hash.outputs.injectr-hash }}
             ${{ matrix.os }}-
 
       - name: Build injectr
-        if: steps.cache-injectr.cache-hit != 'true'
+        if: steps.cache-injectr.outputs.cache-hit != 'true'
         run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL injectr
     
 
