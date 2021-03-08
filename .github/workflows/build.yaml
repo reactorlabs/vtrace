@@ -56,6 +56,7 @@ jobs:
           path: ${{ github.workspace }}/R-dyntrace
           key: ${{ matrix.os }}-R-dyntrace-${{ steps.get-rdt-hash.outputs.rdt-hash }}
           restore-keys: |
+            ${{ matrix.os }}-R-dyntrace-
             ${{ matrix.os }}-
 
       - name: Build R-dyntrace
@@ -84,11 +85,39 @@ jobs:
           path: ${{ github.workspace }}/injectr
           key: ${{ matrix.os }}-injectr-${{ steps.get-injectr-hash.outputs.injectr-hash }}
           restore-keys: |
+            ${{ matrix.os }}-injectr-
             ${{ matrix.os }}-
 
       - name: Build injectr
         if: steps.cache-injectr.outputs.cache-hit != 'true'
         run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL injectr
+
+      - name: Checkout instrumentr
+        uses: actions/checkout@v2
+        with:
+          repository: PRL-PRG/instrumentr
+          path: instrumentr
+
+      - name: Get instrumentr hash
+        id: get-instrumentr-hash
+        run: |
+          cd instrumentr
+          git log -1 --format='%H'
+          echo "::set-output name=instrumentr-hash::$(git log -1 --format='%H')"
+
+      - name: Cache instrumentr
+        id: cache-instrumentr
+        uses: actions/cache@v2
+        with:
+          path: ${{ github.workspace }}/instrumentr
+          key: ${{ matrix.os }}-instrumentr-${{ steps.get-instrumentr-hash.outputs.instrumentr-hash }}
+          restore-keys: |
+            ${{ matrix.os }}-instrumentr-
+            ${{ matrix.os }}-
+
+      - name: Build instrumentr
+        if: steps.cache-instrumentr.outputs.cache-hit != 'true'
+        run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL instrumentr
     
 
       # - name: Checkout vtrace
