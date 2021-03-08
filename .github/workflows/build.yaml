@@ -64,10 +64,10 @@ jobs:
           cd R-dyntrace
           ./build
 
-      - name: Checkout vtrace
-        uses: actions/checkout@v2
-        with:
-          path: vtrace
-
-      - name: Build vtrace
-        run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL vtrace
+      # - name: Checkout vtrace
+      #   uses: actions/checkout@v2
+      #   with:
+      #     path: vtrace
+      #
+      # - name: Build vtrace
+      #   run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL vtrace
