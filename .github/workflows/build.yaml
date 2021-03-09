@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build package
+    name: Build and check vtrace package
 
     # This is a hack to get an "environment variable" that can be accessed by
     # "runs-on"; normally env variables can only be accessed at the "step" level
@@ -22,8 +22,10 @@ jobs:
       # https://github.com/rocker-org/rocker/blob/master/r-devel/Dockerfile
       - name: Add PPA and build dependencies
         run: |
-          sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
-          sudo add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu bionic-cran40/'
+          sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys \
+            E298A3A825C0D65DFD57CBB651716619E084DAB9
+          sudo add-apt-repository \
+            'deb https://cloud.r-project.org/bin/linux/ubuntu bionic-cran40/'
           sudo apt-get update -q
           sudo apt-get install r-base r-base-dev build-essential default-jdk \
             g++ gcc gdb gfortran groff-base libblas-dev libbz2-dev \
@@ -31,9 +33,10 @@ jobs:
             liblzma-dev libncurses5-dev libpango1.0-dev libpcre3-dev \
             libpng-dev libreadline-dev libtiff5-dev libx11-dev libxt-dev mpack \
             subversion tcl8.6-dev texinfo texlive-base texlive-extra-utils \
-            texlive-fonts-extra texlive-fonts-recommended texlive-plain-generic \
-            texlive-latex-base texlive-latex-extra texlive-latex-recommended \
-            tk8.6-dev x11proto-core-dev xauth xdg-utils xfonts-base xvfb zlib1g-dev
+            texlive-fonts-extra texlive-fonts-recommended \
+            texlive-plain-generic texlive-latex-base texlive-latex-extra \
+            texlive-latex-recommended tk8.6-dev x11proto-core-dev xauth \
+            xdg-utils xfonts-base xvfb zlib1g-dev
 
       - name: Checkout R-dyntrace
         uses: actions/checkout@v2
@@ -89,7 +92,7 @@ jobs:
             ${{ matrix.os }}-
 
         # Caching saves the build step, but we can't skip because we need to install
-      - name: Build injectr
+      - name: Install injectr
         run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL injectr
 
       - name: Checkout instrumentr
@@ -116,13 +119,24 @@ jobs:
             ${{ matrix.os }}-
 
         # Caching saves the build step, but we can't skip because we need to install
-      - name: Build instrumentr
+      - name: Install instrumentr
         run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL instrumentr
 
       - name: Checkout vtrace
         uses: actions/checkout@v2
         with:
           path: vtrace
+
+        # R CMD build creates the package but doesn't compile
+      - name: Check package
+        env:
+          _R_CHECK_FORCE_SUGGESTS_: false
+        run: |
+          cd vtrace
+          ${{ github.workspace }}/R-dyntrace/bin/R CMD build .
+          ${{ github.workspace }}/R-dyntrace/bin/R CMD check vtrace*.tar.gz
+          grep -E "ERROR|WARNING|NOTE" vtrace.Rcheck/00check.log
+          test $? -eq 1
 
       - name: Build vtrace
         run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL vtrace

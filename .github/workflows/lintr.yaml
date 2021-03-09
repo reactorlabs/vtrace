@@ -19,11 +19,11 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
       - name: Install libcurl
         run: sudo apt-get install libcurl4-openssl-dev -y
+
+      - name: Checkout code
+        uses: actions/checkout@v2
 
       - name: Install R
         uses: r-lib/actions/setup-r@v1
@@ -41,9 +41,11 @@ jobs:
 
       - name: Install lintr
         if: steps.cache-deps.outputs.cache-hit != 'true'
-        run: if (!require("lintr")) install.packages("lintr", repos="https://cloud.r-project.org")
-        shell: Rscript {0}
+        run: make install-lintr
 
       - name: Run lintr
-        run: quit(status = length(print(lintr::lint_package())) != 0)
-        shell: Rscript {0}
+        run: make lintr
+
+      # - name: Run rcmdcheck
+      #   run: rcmdcheck::rcmdcheck(args = c("--no-manual"), error_on = "warning", check_dir = "check")
+      #   shell: Rscript {0}
