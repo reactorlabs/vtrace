@@ -57,9 +57,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ github.workspace }}/R-dyntrace
-          key: ${{ matrix.os }}-R-dyntrace-${{ steps.get-rdt-hash.outputs.rdt-hash }}
+          key: ${{ matrix.os }}-cache-v1-${{ steps.get-rdt-hash.outputs.rdt-hash }}
           restore-keys: |
-            ${{ matrix.os }}-R-dyntrace-
+            ${{ matrix.os }}-cache-v1-
             ${{ matrix.os }}-
 
       - name: Build R-dyntrace
