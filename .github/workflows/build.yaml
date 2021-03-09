@@ -95,6 +95,9 @@ jobs:
         with:
           path: vtrace
 
+      - name: Build vtrace
+        run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL vtrace
+
         # R CMD build creates the package but doesn't compile
       - name: Check vtrace
         env:
@@ -106,5 +109,3 @@ jobs:
           grep -E "ERROR|WARNING|NOTE" vtrace.Rcheck/00check.log
           test $? -eq 1
 
-      - name: Build vtrace
-        run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL vtrace
