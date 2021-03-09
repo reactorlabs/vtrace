@@ -45,7 +45,3 @@ jobs:
 
       - name: Run lintr
         run: make lintr
-
-      # - name: Run rcmdcheck
-      #   run: rcmdcheck::rcmdcheck(args = c("--no-manual"), error_on = "warning", check_dir = "check")
-      #   shell: Rscript {0}

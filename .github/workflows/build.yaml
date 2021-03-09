@@ -57,7 +57,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ github.workspace }}/R-dyntrace
-          key: ${{ matrix.os }}-R-dyntrace-${{ steps.get-rdt-hash.outputs.rdt-hash }}
+          key: ${{ matrix.os }}-R-dyntrace-${{ steps.get-rdt-hash.outputs.rdt-hash }}-v1
           restore-keys: |
             ${{ matrix.os }}-R-dyntrace-
             ${{ matrix.os }}-
@@ -69,58 +69,31 @@ jobs:
           ./build
 
       - name: Checkout injectr
+        if: steps.cache-rdt.outputs.cache-hit != 'true'
         uses: actions/checkout@v2
         with:
           repository: PRL-PRG/injectr
           path: injectr
 
-      - name: Get injectr hash
-        id: get-injectr-hash
-        run: |
-          cd injectr
-          git log -1 --format='%H'
-          echo "::set-output name=injectr-hash::$(git log -1 --format='%H')"
-
-      - name: Cache injectr
-        id: cache-injectr
-        uses: actions/cache@v2
-        with:
-          path: ${{ github.workspace }}/injectr
-          key: ${{ matrix.os }}-injectr-${{ steps.get-injectr-hash.outputs.injectr-hash }}
-          restore-keys: |
-            ${{ matrix.os }}-injectr-
-            ${{ matrix.os }}-
-
-        # Caching saves the build step, but we can't skip because we need to install
       - name: Install injectr
+        if: steps.cache-rdt.outputs.cache-hit != 'true'
         run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL injectr
 
       - name: Checkout instrumentr
+        if: steps.cache-rdt.outputs.cache-hit != 'true'
         uses: actions/checkout@v2
         with:
           repository: PRL-PRG/instrumentr
           path: instrumentr
 
-      - name: Get instrumentr hash
-        id: get-instrumentr-hash
-        run: |
-          cd instrumentr
-          git log -1 --format='%H'
-          echo "::set-output name=instrumentr-hash::$(git log -1 --format='%H')"
-
-      - name: Cache instrumentr
-        id: cache-instrumentr
-        uses: actions/cache@v2
-        with:
-          path: ${{ github.workspace }}/instrumentr
-          key: ${{ matrix.os }}-instrumentr-${{ steps.get-instrumentr-hash.outputs.instrumentr-hash }}
-          restore-keys: |
-            ${{ matrix.os }}-instrumentr-
-            ${{ matrix.os }}-
-
-        # Caching saves the build step, but we can't skip because we need to install
       - name: Install instrumentr
+        if: steps.cache-rdt.outputs.cache-hit != 'true'
         run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL instrumentr
+
+      - name: Install rcmdcheck
+        if: steps.cache-rdt.outputs.cache-hit != 'true'
+        run: ${{ github.workspace }}/R-dyntrace/bin/R --quiet -e \
+          'if (!require("rcmdcheck")) install.packages("rcmdcheck", repos="https://cloud.r-project.org")'
 
       - name: Checkout vtrace
         uses: actions/checkout@v2
@@ -128,15 +101,17 @@ jobs:
           path: vtrace
 
         # R CMD build creates the package but doesn't compile
-      - name: Check package
+      - name: Check vtrace
         env:
           _R_CHECK_FORCE_SUGGESTS_: false
         run: |
           cd vtrace
-          ${{ github.workspace }}/R-dyntrace/bin/R CMD build .
-          ${{ github.workspace }}/R-dyntrace/bin/R CMD check vtrace*.tar.gz
-          grep -E "ERROR|WARNING|NOTE" vtrace.Rcheck/00check.log
-          test $? -eq 1
+          ${{ github.workspace }}/R-dyntrace/bin/R --quiet -e \
+            'rcmdcheck::rcmdcheck(args = c("--no-manual"), error_on = "warning", check_dir = "check")'
+          # ${{ github.workspace }}/R-dyntrace/bin/R CMD build .
+          # ${{ github.workspace }}/R-dyntrace/bin/R CMD check vtrace*.tar.gz
+          # grep -E "ERROR|WARNING|NOTE" vtrace.Rcheck/00check.log
+          # test $? -eq 1
 
       - name: Build vtrace
         run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL vtrace
