@@ -31,10 +31,6 @@ create_tracer <- function() {
 #' `search()`), forcing functions that would be lazy loaded, then initializes
 #' the tracer object, and then runs the instrumentr tracer.
 #'
-#' @param code The code to trace
-#' @param envir The environment the code executes in
-#' @param quote Whether the code is quoted.
-#'
 #' @importFrom instrumentr trace_code
 #' @export
 trace_code <- function(code,
