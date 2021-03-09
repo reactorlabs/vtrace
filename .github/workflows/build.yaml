@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build and check vtrace package
+    name: Build vtrace package
 
     # This is a hack to get an "environment variable" that can be accessed by
     # "runs-on"; normally env variables can only be accessed at the "step" level
@@ -57,9 +57,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ github.workspace }}/R-dyntrace
-          key: ${{ matrix.os }}-cache-v1-${{ steps.get-rdt-hash.outputs.rdt-hash }}
+          key: ${{ matrix.os }}-cache-v2-${{ steps.get-rdt-hash.outputs.rdt-hash }}
           restore-keys: |
-            ${{ matrix.os }}-cache-v1-
+            ${{ matrix.os }}-cache-v2-
             ${{ matrix.os }}-
 
       - name: Build R-dyntrace
@@ -95,18 +95,5 @@ jobs:
         with:
           path: vtrace
 
-        # R CMD build creates the package but doesn't compile
-        # Don't check for documentation; installing/running roxygen is too slow
-      - name: Check vtrace
-        env:
-          _R_CHECK_FORCE_SUGGESTS_: false
-        run: |
-          cd vtrace
-          ${{ github.workspace }}/R-dyntrace/bin/R CMD build .
-          ${{ github.workspace }}/R-dyntrace/bin/R CMD check --no-codoc vtrace*.tar.gz
-          grep -E "ERROR|WARNING" vtrace.Rcheck/00check.log
-          test $? -eq 1
-
       - name: Build vtrace
         run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL vtrace
-
