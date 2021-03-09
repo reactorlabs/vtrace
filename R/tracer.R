@@ -1,10 +1,9 @@
-# Creates and returns the tracer object by setting up the callbacks. Most
-# callbacks are implemented in C.
-#
+#' Creates and returns the tracer object
+#'
 #' @importFrom instrumentr create_context
 #' @export
 create_tracer <- function() {
-    context <- create_context(
+    context <- instrumentr::create_context(
         application_load_callback = application_load_callback,
         closure_call_entry_callback = .Call(C_closure_call_entry_callback),
         closure_call_exit_callback = .Call(C_closure_call_exit_callback),
@@ -26,11 +25,12 @@ create_tracer <- function() {
     context
 }
 
-# Helper function that traces the provided code. This helper searches all
-# attached packages (returned by the call to `search()`), forcing functions
-# that would be lazy loaded, then initializes the tracer object, and then runs
-# the instrumentr tracer.
-#
+#' Helper for tracing the provided code
+#'
+#' This helper searches all attached packages (returned by the call to
+#' `search()`), forcing functions that would be lazy loaded, then initializes
+#' the tracer object, and then runs the instrumentr tracer.
+#'
 #' @importFrom instrumentr trace_code
 #' @export
 trace_code <- function(code,
@@ -79,6 +79,8 @@ force_lazy_loaded_functions <- function(packages) {
 # (adding the package to the search path) are two separate steps, both
 # performed by `library()`. We add a hook to the onLoad event, because those
 # packages are accessible and we want the tracer to be aware of them.
+#
+#' @importFrom utils installed.packages
 application_load_callback <- function(context, application) {
     installed_packages <- installed.packages()[, 1]
     for (pkg in installed_packages) {
@@ -90,6 +92,8 @@ application_load_callback <- function(context, application) {
 # Cleanup: remove all package hooks, by replacing existing hooks with NULL.
 # We call this hook when detaching, because we have a separate hook
 # (implemented in C) that is called when unloading.
+#
+#' @importFrom utils installed.packages
 application_detach_callback <- function(context, application) {
     installed_packages <- installed.packages()[, 1]
     for (pkg in installed_packages) {

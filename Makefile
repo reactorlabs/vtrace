@@ -16,8 +16,9 @@ check: build
 
 clean:
 	rm -f vtrace*tar.gz
-	rm -fr vtrace.Rcheck
+	rm -rf vtrace.Rcheck
 	rm -rf src/*.o src/*.so
+	rm -rf man
 
 install: clean
 	$(R) CMD INSTALL .

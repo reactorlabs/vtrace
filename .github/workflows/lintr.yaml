@@ -9,6 +9,8 @@ jobs:
   lintr:
     name: Run lintr
 
+    # This is a hack to get an "environment variable" that can be accessed by
+    # "runs-on"; normally env variables can only be accessed at the "step" level
     strategy:
       matrix:
         os: [ubuntu-20.04]
@@ -17,11 +19,11 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      - name: Install libcurl
+        run: sudo apt-get install libcurl4-openssl-dev -y
+
       - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: Install libcurl
-        run: sudo apt-get install libcurl4-openssl-dev
 
       - name: Install R
         uses: r-lib/actions/setup-r@v1
@@ -37,11 +39,9 @@ jobs:
           restore-keys: |
             ${{ matrix.os }}-
 
-      - name: Install dependencies
-        if: steps.cache-deps.cache-hit != 'true'
-        run: if (!require("lintr")) install.packages("lintr", repos="https://cloud.r-project.org")
-        shell: Rscript {0}
+      - name: Install lintr
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: make install-lintr
 
-      - name: Lint
-        run: quit(status = length(print(lintr::lint_package())) != 0)
-        shell: Rscript {0}
+      - name: Run lintr
+        run: make lintr
