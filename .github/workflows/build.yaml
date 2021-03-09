@@ -57,7 +57,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ github.workspace }}/R-dyntrace
-          key: ${{ matrix.os }}-R-dyntrace-${{ steps.get-rdt-hash.outputs.rdt-hash }}-v1
+          key: ${{ matrix.os }}-R-dyntrace-${{ steps.get-rdt-hash.outputs.rdt-hash }}
           restore-keys: |
             ${{ matrix.os }}-R-dyntrace-
             ${{ matrix.os }}-
@@ -90,11 +90,6 @@ jobs:
         if: steps.cache-rdt.outputs.cache-hit != 'true'
         run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL instrumentr
 
-      - name: Install rcmdcheck
-        if: steps.cache-rdt.outputs.cache-hit != 'true'
-        run: ${{ github.workspace }}/R-dyntrace/bin/R --quiet -e \
-          'if (!require("rcmdcheck")) install.packages("rcmdcheck", repos="https://cloud.r-project.org")'
-
       - name: Checkout vtrace
         uses: actions/checkout@v2
         with:
@@ -106,12 +101,10 @@ jobs:
           _R_CHECK_FORCE_SUGGESTS_: false
         run: |
           cd vtrace
-          ${{ github.workspace }}/R-dyntrace/bin/R --quiet -e \
-            'rcmdcheck::rcmdcheck(args = c("--no-manual"), error_on = "warning", check_dir = "check")'
-          # ${{ github.workspace }}/R-dyntrace/bin/R CMD build .
-          # ${{ github.workspace }}/R-dyntrace/bin/R CMD check vtrace*.tar.gz
-          # grep -E "ERROR|WARNING|NOTE" vtrace.Rcheck/00check.log
-          # test $? -eq 1
+          ${{ github.workspace }}/R-dyntrace/bin/R CMD build .
+          ${{ github.workspace }}/R-dyntrace/bin/R CMD check vtrace*.tar.gz
+          grep -E "ERROR|WARNING|NOTE" vtrace.Rcheck/00check.log
+          test $? -eq 1
 
       - name: Build vtrace
         run: ${{ github.workspace }}/R-dyntrace/bin/R CMD INSTALL vtrace

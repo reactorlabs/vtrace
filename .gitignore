@@ -2,3 +2,4 @@
 *.so
 vtrace*.tar.gz
 vtrace.Rcheck
+man/
