@@ -10,11 +10,11 @@ typedef std::vector<int> force_order_t;
 class Call {
   public:
     Call(Function* function, SEXP r_call, SEXP r_args, SEXP r_rho)
-        : r_call_(r_call)
+        : function_(function)
+        , r_call_(r_call)
         , r_args_(r_args)
         , r_rho_(r_rho)
-        , interrupted_(false)
-        , function_(function) {
+        , interrupted_(false) {
     }
 
     Function* get_function() {

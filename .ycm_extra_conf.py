@@ -17,11 +17,8 @@ def Settings( **kwargs ):
       '-O2',
       '-ggdb3',
       '-fpic',
-#      '-Wall',
-#      '-Wextra',
-#      '-Werror',
-#      '-Wno-long-long',
-#      '-Wno-variadic-macros',
-#      '-fexceptions',
+      '-Wall',
+      '-Wextra',
+      '-fexceptions',
     ]
   }

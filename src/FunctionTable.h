@@ -161,7 +161,7 @@ class FunctionTable {
             return result->second;
         } else {
             Function* function = new Function(r_closure);
-            auto result = table_.insert({r_closure, function});
+            table_.insert({r_closure, function});
             return function;
         }
     }

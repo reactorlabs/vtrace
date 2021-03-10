@@ -4,6 +4,8 @@
 #include "Context.hpp"
 #include "Application.hpp"
 
+#define UNUSED(expr) do { (void)(expr); } while (0)
+
 using instrumentr::ApplicationSPtr;
 using instrumentr::ContextSPtr;
 

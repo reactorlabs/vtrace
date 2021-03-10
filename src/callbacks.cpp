@@ -34,8 +34,8 @@ SEXP r_add_package() {
     return R_NilValue;
 }
 
-void closure_call_entry_callback(ContextSPtr context,
-                                 ApplicationSPtr application,
+void closure_call_entry_callback(ContextSPtr /* context */,
+                                 ApplicationSPtr /* application */,
                                  SEXP r_call,
                                  SEXP r_op,
                                  SEXP r_args,
@@ -53,13 +53,13 @@ void closure_call_entry_callback(ContextSPtr context,
     }
 }
 
-void closure_call_exit_callback(ContextSPtr context,
-                                ApplicationSPtr application,
+void closure_call_exit_callback(ContextSPtr /* context */,
+                                ApplicationSPtr /* application */,
                                 SEXP r_call,
                                 SEXP r_op,
                                 SEXP r_args,
                                 SEXP r_rho,
-                                SEXP r_result) {
+                                SEXP /* r_result */) {
     Function* function = function_table.lookup(r_op);
 
     if (is_library_function(function)) {
@@ -81,22 +81,22 @@ void closure_call_exit_callback(ContextSPtr context,
     }
 }
 
-void object_duplicate_callback(ContextSPtr context,
-                               ApplicationSPtr application,
+void object_duplicate_callback(ContextSPtr /* context */,
+                               ApplicationSPtr /* application */,
                                SEXP r_input,
                                SEXP r_output,
-                               SEXP r_deep) {
+                               SEXP /* r_deep */) {
     if (in_library != 0) return;
 
     auto t = TYPEOF(r_input);
     if (t == INTSXP || t == REALSXP || t == CPLXSXP || t == LGLSXP ||
         t == RAWSXP || t == STRSXP || t == VECSXP) {
         // older stuff, record data about vector duplication
-        sprintf(buffer, "%p", r_input);
+        sprintf(buffer, "%p", (void*)r_input);
         std::string input = std::string(buffer);
         input_addr.push_back(input);
 
-        sprintf(buffer, "%p", r_output);
+        sprintf(buffer, "%p", (void*)r_output);
         std::string output = std::string(buffer);
         output_addr.push_back(output);
 
@@ -128,12 +128,12 @@ void object_duplicate_callback(ContextSPtr context,
     }
 }
 
-void application_unload_callback(ContextSPtr context,
-                                 ApplicationSPtr application) {
+void application_unload_callback(ContextSPtr /* context */,
+                                 ApplicationSPtr /* application */) {
     std::ofstream file("duplication.csv");
 
     file << "input_addr,output_addr,type,length,fun,fun_id\n";
-    for (int i = 0; i < input_addr.size(); ++i) {
+    for (unsigned int i = 0; i < input_addr.size(); ++i) {
         file << input_addr[i] << "," << output_addr[i] << "," << type[i] << ","
              << length[i] << "," << top_function[i] << "," << function_id[i] << "\n";
     }
@@ -149,39 +149,39 @@ void application_unload_callback(ContextSPtr context,
     file3.close();
 }
 
-void variable_definition_callback(ContextSPtr context,
-                                  ApplicationSPtr application,
+void variable_definition_callback(ContextSPtr /* context */,
+                                  ApplicationSPtr /* application */,
                                   SEXP r_symbol,
                                   SEXP r_value,
                                   SEXP r_rho) {
     function_table.update(r_value, CHAR(PRINTNAME(r_symbol)), r_rho);
 }
 
-void variable_assignment_callback(ContextSPtr context,
-                                  ApplicationSPtr application,
+void variable_assignment_callback(ContextSPtr /* context */,
+                                  ApplicationSPtr /* application */,
                                   SEXP r_symbol,
                                   SEXP r_value,
                                   SEXP r_rho) {
     function_table.update(r_value, CHAR(PRINTNAME(r_symbol)), r_rho);
 }
 
-void variable_lookup_callback(ContextSPtr context,
-                              ApplicationSPtr application,
+void variable_lookup_callback(ContextSPtr /* context */,
+                              ApplicationSPtr /* application */,
                               SEXP r_symbol,
                               SEXP r_value,
                               SEXP r_rho) {
     function_table.update(r_value, CHAR(PRINTNAME(r_symbol)), r_rho);
 }
 
-void context_entry_callback(ContextSPtr context,
-                            ApplicationSPtr application,
+void context_entry_callback(ContextSPtr /* context */,
+                            ApplicationSPtr /* application */,
                             void* call_context) {
     StackFrame frame = StackFrame::from_context(call_context);
     stack.push(frame);
 }
 
-void context_exit_callback(ContextSPtr context,
-                           ApplicationSPtr application,
+void context_exit_callback(ContextSPtr /* context */,
+                           ApplicationSPtr /* application */,
                            void* call_context) {
     StackFrame frame = stack.pop();
 
@@ -227,8 +227,8 @@ void context_jump_callback(ContextSPtr context,
     Rf_error("cannot find matching context while unwinding\n");
 }
 
-void gc_allocation_callback(ContextSPtr context,
-                            ApplicationSPtr application,
+void gc_allocation_callback(ContextSPtr /* context */,
+                            ApplicationSPtr /* application */,
                             SEXP r_object) {
     if (TYPEOF(r_object) == CLOSXP) {
         // TODO: check if function was already inserted?
@@ -237,8 +237,8 @@ void gc_allocation_callback(ContextSPtr context,
     }
 }
 
-void gc_unmark_callback(ContextSPtr context,
-                        ApplicationSPtr application,
+void gc_unmark_callback(ContextSPtr /* context */,
+                        ApplicationSPtr /* application */,
                         SEXP r_object) {
     if (TYPEOF(r_object) == CLOSXP) {
         function_table.lookup(r_object)->finalize();
