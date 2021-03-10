@@ -19,6 +19,7 @@ def Settings( **kwargs ):
       '-fpic',
       '-Wall',
       '-Wextra',
+      '-pedantic',
       '-fexceptions',
     ]
   }
