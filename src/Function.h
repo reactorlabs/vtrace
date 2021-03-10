@@ -6,7 +6,7 @@
 #include <Rdyntrace.h>
 #include <string>
 
-#include "picosha2.h"
+#include "lib/picosha2.h"
 
 static const std::string NotComputed = "<not computed>";
 static int fun_counter = 0;

@@ -23,4 +23,4 @@ SEXP r_get_gc_unmark_callback();
 }
 #endif
 
-#endif /* VTRACE_R_CALLBACKS_H  */
+#endif // VTRACE_R_CALLBACKS_H

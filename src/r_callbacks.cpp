@@ -1,5 +1,7 @@
-#include "r_callbacks.h"
 #include "callbacks.h"
+#include "r_callbacks.h"
+
+// r_add_package is defined in `callbacks.cpp`; it doesn't need a wrapper.
 
 SEXP r_closure_call_entry_callback() {
     return R_MakeExternalPtr(
