@@ -6,19 +6,19 @@
 #include <fstream>
 #include <unordered_map>
 
-#include "RVector.h"
+#include "Vector.h"
 
-class RVectorTable {
+class VectorTable {
   public:
-    RVectorTable() = default;
+    VectorTable() = default;
 
-    ~RVectorTable() {
+    ~VectorTable() {
         for (auto& it : table_) {
             delete it.second;
         }
     }
 
-    void insert(RVector* vec) {
+    void insert(Vector* vec) {
         table_.insert({vec->get_id(), vec});
         addr_to_id_.insert({vec->get_address(), vec->get_id()});
     }
@@ -26,7 +26,7 @@ class RVectorTable {
     void remove(int id) {
         auto result = table_.find(id);
         if (result != table_.end()) {
-            RVector* vec = result->second;
+            Vector* vec = result->second;
             table_.erase(result);
             auto res2 = addr_to_id_.find(vec->get_address());
             if (res2 != addr_to_id_.end()) {
@@ -37,7 +37,7 @@ class RVectorTable {
         }
     }
 
-    RVector* lookup(int id) {
+    Vector* lookup(int id) {
         auto result = table_.find(id);
         if (result != table_.end()) {
             return result->second;
@@ -46,7 +46,7 @@ class RVectorTable {
         }
     }
 
-    RVector* lookup_by_addr(std::string addr) {
+    Vector* lookup_by_addr(std::string addr) {
         auto result = addr_to_id_.find(addr);
         if (result != addr_to_id_.end()) {
             return lookup(result->second);
@@ -55,16 +55,16 @@ class RVectorTable {
         }
     }
 
-    RVector* get_copy_of(int id) {
-        RVector* cur = lookup(id);
+    Vector* get_copy_of(int id) {
+        Vector* cur = lookup(id);
         if (cur && cur->is_copy()) {
             return lookup(cur->get_copy_of());
         }
         return nullptr;
     }
 
-    RVector* get_original_copy_of(int id) {
-        RVector* cur = lookup(id);
+    Vector* get_original_copy_of(int id) {
+        Vector* cur = lookup(id);
         while (cur) {
             if (!cur->is_copy()) {
                 break;
@@ -89,7 +89,7 @@ class RVectorTable {
     }
 
   private:
-    std::unordered_map<int, RVector*> table_;
+    std::unordered_map<int, Vector*> table_;
     std::unordered_map<std::string, int> addr_to_id_;
 };
 

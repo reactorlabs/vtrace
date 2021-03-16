@@ -48,10 +48,6 @@ static const R_CallMethodDef callMethods[] = {
  */
 void R_init_vtrace(DllInfo* dll) {
     R_registerRoutines(dll, NULL, callMethods, NULL, NULL);
-
-    // Allow `.Call(C_name)` to call the function registered as "name"
     R_useDynamicSymbols(dll, FALSE);
-
-    // Forbid `.Call("name")` to call the function registered as "name"
     R_forceSymbols(dll, TRUE);
 }

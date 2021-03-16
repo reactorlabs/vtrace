@@ -1,8 +1,8 @@
 #ifndef VTRACE_CALLBACKS_H
 #define VTRACE_CALLBACKS_H
 
-#include "Context.hpp"
-#include "Application.hpp"
+#include <Context.hpp>
+#include <Application.hpp>
 
 using instrumentr::ApplicationSPtr;
 using instrumentr::ContextSPtr;
@@ -69,6 +69,4 @@ void gc_unmark_callback(ContextSPtr context,
                         ApplicationSPtr application,
                         SEXP r_object);
 
-
-
-#endif /* VTRACE_CALLBACKS_H */
+#endif // VTRACE_CALLBACKS_H

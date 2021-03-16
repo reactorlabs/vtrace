@@ -7,9 +7,9 @@
 
 static int vec_counter = 0;
 
-class RVector {
+class Vector {
   public:
-    RVector(std::string addr, SEXPTYPE type, int length)
+    Vector(std::string addr, SEXPTYPE type, int length)
         : id_(vec_counter++)
         , address_(addr)
         , type_(type)
