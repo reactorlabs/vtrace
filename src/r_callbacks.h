@@ -1,11 +1,12 @@
 #ifndef VTRACE_R_CALLBACKS_H
 #define VTRACE_R_CALLBACKS_H
 
-#include "Rincludes.h"
+#include <Rincludes.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+// r_add_package is defined in `callbacks.cpp`; it doesn't need a wrapper.
 SEXP r_add_package();
 SEXP r_closure_call_entry_callback();
 SEXP r_closure_call_exit_callback();

@@ -8,6 +8,22 @@
 #include "r_callbacks.h"
 
 /*
+ * TODO
+ *  - implementation
+ *      - EventTable to track alloc, duplicate, dealloc
+ *          - Later: track closure entry/exit
+ *      - Debug issue with tracking deallocs
+ *      - look into vector_copy and matrix_copy callbacks
+ *      - don't skip "in library" tracing
+ *      - maybe have some markers for "phases" of the program
+ *  - refactor
+ *      - Call, StackFrame, Stack
+ *      - Vector, VectorTable
+ *      - callbacks
+ *  - clang-format and cppcheck
+ */
+
+/*
  * Table of methods that can be called from R.
  *
  * The first struct element is the symbol available within R, passed to a
@@ -48,10 +64,6 @@ static const R_CallMethodDef callMethods[] = {
  */
 void R_init_vtrace(DllInfo* dll) {
     R_registerRoutines(dll, NULL, callMethods, NULL, NULL);
-
-    // Allow `.Call(C_name)` to call the function registered as "name"
     R_useDynamicSymbols(dll, FALSE);
-
-    // Forbid `.Call("name")` to call the function registered as "name"
     R_forceSymbols(dll, TRUE);
 }

@@ -1,13 +1,15 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
-#include "Rinternals.h"
+#include <Rinternals.h>
 #include "callbacks.h"
 #include "r_callbacks.h"
 
-#include "FunctionTable.h"
-#include "RVectorTable.h"
-#include "Stack.h"
+#include "model/FunctionTable.h"
+#include "model/VectorTable.h"
+#include "model/Stack.h"
+
+// TODO: lots of refactoring/rewriting needed here
 
 std::vector<std::string> input_addr;
 std::vector<std::string> output_addr;
@@ -21,7 +23,7 @@ bool loaded = false;
 int in_library = 0;
 
 FunctionTable function_table;
-RVectorTable vector_table;
+VectorTable vector_table;
 Stack stack;
 
 bool is_library_function(const Function* function) {
@@ -114,14 +116,14 @@ void object_duplicate_callback(ContextSPtr /* context */,
         }
 
         // newer stuff, create vector objects and add to vector table
-        RVector* src = vector_table.lookup_by_addr(input);
-        RVector* dst = vector_table.lookup_by_addr(output);
+        Vector* src = vector_table.lookup_by_addr(input);
+        Vector* dst = vector_table.lookup_by_addr(output);
         if (!src) {
-            src = new RVector(input, TYPEOF(r_input), Rf_length(r_input));
+            src = new Vector(input, TYPEOF(r_input), Rf_length(r_input));
             vector_table.insert(src);
         }
         if (!dst) {
-            dst = new RVector(output, TYPEOF(r_input), Rf_length(r_input));
+            dst = new Vector(output, TYPEOF(r_input), Rf_length(r_input));
             vector_table.insert(dst);
         }
         dst->set_copy_of(src->get_id());

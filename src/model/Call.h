@@ -1,6 +1,8 @@
 #ifndef VTRACE_CALL_H
 #define VTRACE_CALL_H
 
+#include <vector>
+
 #include "Function.h"
 
 class Function;
@@ -53,4 +55,4 @@ class Call {
     bool interrupted_;
 };
 
-#endif /* VTRACE_CALL_H */
+#endif // VTRACE_CALL_H

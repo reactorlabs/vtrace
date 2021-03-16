@@ -11,9 +11,10 @@ Architecture
 ------------
 
   * `R/` - R source code
-    * `R/tracer.R` - the main application code, in R
+    * `R/tracer.R` - Main application code, in R
   * `src/` - C++ source code
-    * `src/callbacks.{h,cpp}` - the main application code, in C++
+    * `src/callbacks.{h,cpp}` - Main application code, in C++
+  * `src/model` - Models R objects in the tracer -- these need to be header-only
 
 ### Boilerplate
 
