@@ -35,7 +35,7 @@ class Function {
     std::string definition_ = NotComputed;
     std::string hash_ = NotComputed;
     int called_ = 0;
-    bool finalized = false;
+    bool finalized_ = false;
 
   public:
     explicit Function(SEXP r_op)
@@ -146,7 +146,7 @@ class Function {
     }
 
     void finalize() {
-        finalized = true;
+        finalized_ = true;
     }
 
   private:
