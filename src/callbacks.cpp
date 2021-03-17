@@ -93,7 +93,8 @@ void object_duplicate_callback(ContextSPtr /* context */,
     auto t = TYPEOF(r_input);
     if (t == INTSXP || t == REALSXP || t == CPLXSXP || t == LGLSXP ||
         t == RAWSXP || t == STRSXP || t == VECSXP) {
-        // older stuff, record data about vector duplication
+        // TODO: older stuff, record data about vector duplication
+        // Most of this handling should be done by the VectorTable
         sprintf(buffer, "%p", (void*)r_input);
         std::string input = std::string(buffer);
         input_addr.push_back(input);
@@ -116,6 +117,7 @@ void object_duplicate_callback(ContextSPtr /* context */,
         }
 
         // newer stuff, create vector objects and add to vector table
+        // TODO: VectorTable should be responsible for Vector construction
         Vector* src = vector_table.lookup_by_addr(input);
         Vector* dst = vector_table.lookup_by_addr(output);
         if (!src) {

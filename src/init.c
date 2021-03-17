@@ -37,10 +37,10 @@
  */
 static const R_CallMethodDef callMethods[] = {
     {"add_package", (DL_FUNC) &r_add_package, 0},
-    {"closure_call_entry_callback", (DL_FUNC) &r_closure_call_entry_callback, 0},
-    {"closure_call_exit_callback", (DL_FUNC) &r_closure_call_exit_callback, 0},
-    {"object_duplicate_callback", (DL_FUNC) &r_object_duplicate_callback, 0},
-    {"application_unload_callback", (DL_FUNC) &r_application_unload_callback, 0},
+    {"get_closure_call_entry_callback", (DL_FUNC) &r_get_closure_call_entry_callback, 0},
+    {"get_closure_call_exit_callback", (DL_FUNC) &r_get_closure_call_exit_callback, 0},
+    {"get_object_duplicate_callback", (DL_FUNC) &r_get_object_duplicate_callback, 0},
+    {"get_application_unload_callback", (DL_FUNC) &r_get_application_unload_callback, 0},
     {"get_variable_definition_callback", (DL_FUNC) &r_get_variable_definition_callback, 0},
     {"get_variable_assignment_callback", (DL_FUNC) &r_get_variable_assignment_callback, 0},
     {"get_variable_lookup_callback", (DL_FUNC) &r_get_variable_lookup_callback, 0},
