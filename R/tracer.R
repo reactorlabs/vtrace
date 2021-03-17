@@ -5,11 +5,11 @@
 create_tracer <- function() {
     context <- instrumentr::create_context(
         application_load_callback = application_load_callback,
-        closure_call_entry_callback = .Call(C_closure_call_entry_callback),
-        closure_call_exit_callback = .Call(C_closure_call_exit_callback),
-        object_duplicate_callback = .Call(C_object_duplicate_callback),
+        closure_call_entry_callback = .Call(C_get_closure_call_entry_callback),
+        closure_call_exit_callback = .Call(C_get_closure_call_exit_callback),
+        object_duplicate_callback = .Call(C_get_object_duplicate_callback),
         application_detach_callback = application_detach_callback,
-        application_unload_callback = .Call(C_application_unload_callback),
+        application_unload_callback = .Call(C_get_application_unload_callback),
 
         context_entry_callback = .Call(C_get_context_entry_callback),
         context_exit_callback = .Call(C_get_context_exit_callback),

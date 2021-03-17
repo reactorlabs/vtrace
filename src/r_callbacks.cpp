@@ -3,22 +3,22 @@
 
 // r_add_package is defined in `callbacks.cpp`; it doesn't need a wrapper.
 
-SEXP r_closure_call_entry_callback() {
+SEXP r_get_closure_call_entry_callback() {
     return R_MakeExternalPtr(
         (void*) (closure_call_entry_callback), R_NilValue, R_NilValue);
 }
 
-SEXP r_closure_call_exit_callback() {
+SEXP r_get_closure_call_exit_callback() {
     return R_MakeExternalPtr(
         (void*) (closure_call_exit_callback), R_NilValue, R_NilValue);
 }
 
-SEXP r_object_duplicate_callback() {
+SEXP r_get_object_duplicate_callback() {
     return R_MakeExternalPtr(
         (void*) (object_duplicate_callback), R_NilValue, R_NilValue);
 }
 
-SEXP r_application_unload_callback() {
+SEXP r_get_application_unload_callback() {
     return R_MakeExternalPtr(
         (void*) (application_unload_callback), R_NilValue, R_NilValue);
 }
