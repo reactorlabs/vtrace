@@ -31,6 +31,21 @@ bool is_library_function(const Function* function) {
            function->get_package_name() == "base";
 }
 
+bool is_vector(SEXP s) {
+    switch (TYPEOF(s)) {
+        case INTSXP:
+        case REALSXP:
+        case CPLXSXP:
+        case LGLSXP:
+        case RAWSXP:
+        case STRSXP:
+        case VECSXP:
+            return true;
+        default:
+            return false;
+    }
+}
+
 SEXP r_add_package() {
     function_table.update_packages();
     return R_NilValue;
@@ -90,11 +105,10 @@ void object_duplicate_callback(ContextSPtr /* context */,
                                SEXP /* r_deep */) {
     if (in_library != 0) return;
 
-    auto t = TYPEOF(r_input);
-    if (t == INTSXP || t == REALSXP || t == CPLXSXP || t == LGLSXP ||
-        t == RAWSXP || t == STRSXP || t == VECSXP) {
+    if (is_vector(r_input)) {
         // TODO: older stuff, record data about vector duplication
         // Most of this handling should be done by the VectorTable
+        // Or moved into an EventTable for "duplication" events
         sprintf(buffer, "%p", (void*)r_input);
         std::string input = std::string(buffer);
         input_addr.push_back(input);
@@ -117,18 +131,7 @@ void object_duplicate_callback(ContextSPtr /* context */,
         }
 
         // newer stuff, create vector objects and add to vector table
-        // TODO: VectorTable should be responsible for Vector construction
-        Vector* src = vector_table.lookup_by_addr(input);
-        Vector* dst = vector_table.lookup_by_addr(output);
-        if (!src) {
-            src = new Vector(input, TYPEOF(r_input), Rf_length(r_input));
-            vector_table.insert(src);
-        }
-        if (!dst) {
-            dst = new Vector(output, TYPEOF(r_input), Rf_length(r_input));
-            vector_table.insert(dst);
-        }
-        dst->set_copy_of(src->get_id());
+        vector_table.duplicate(r_input, r_output);
     }
 }
 
@@ -143,12 +146,11 @@ void application_unload_callback(ContextSPtr /* context */,
     }
     file.close();
 
-    std::ofstream file2("duplication_functions.csv");
+    std::ofstream file2("functions.csv");
     function_table.dump_table_to_csv(file2);
     file2.close();
 
-
-    std::ofstream file3("duplication_vectors.csv");
+    std::ofstream file3("vectors.csv");
     vector_table.dump_table_to_csv(file3);
     file3.close();
 }
@@ -238,6 +240,9 @@ void gc_allocation_callback(ContextSPtr /* context */,
         // TODO: check if function was already inserted?
         // Are functions gc'd? Are addresses reused for functions?
         function_table.insert(r_object);
+    } else if (is_vector(r_object)) {
+        if (in_library != 0) return;
+        vector_table.insert(r_object);
     }
 }
 
@@ -248,5 +253,7 @@ void gc_unmark_callback(ContextSPtr /* context */,
         function_table.lookup(r_object)->finalize();
         // WARN: causes segfault when run
         //function_table.remove(r_object);
+    } else if (is_vector(r_object)) {
+//        vector_table.finalize(r_object);
     }
 }
