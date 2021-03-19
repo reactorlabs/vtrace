@@ -1,14 +1,19 @@
-#ifndef PROMISEDYNTRACER_STACK_H
-#define PROMISEDYNTRACER_STACK_H
+#ifndef VTRACE_STACK_H
+#define VTRACE_STACK_H
 
 #include "StackFrame.h"
 
 #include <vector>
 
+/*
+ * This class models the R interpreter stack. It keeps track of both calls and
+ * contexts.
+ */
 class Stack {
+    std::vector<StackFrame> stack_;
+
   public:
-    explicit Stack(): stack_() {
-    }
+    explicit Stack() = default;
 
     size_t size() const {
         return stack_.size();
@@ -44,10 +49,6 @@ class Stack {
         }
         return nullptr;
     }
-
-
-  private:
-    std::vector<StackFrame> stack_;
 };
 
-#endif /* PROMISEDYNTRACER_EXECUTION_CONTEXT_STACK_H */
+#endif // VTRACE_STACK_H

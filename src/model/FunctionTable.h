@@ -84,13 +84,13 @@ class FunctionTable {
     // Update the FunctionTable by iterating over all functions in packages that
     // have not yet been seen.
     void update_packages() {
-        SEXP package_names = R_lsInternal(R_NamespaceRegistry, TRUE);
+        SEXP r_package_names = R_lsInternal(R_NamespaceRegistry, TRUE);
 
         // Iterate over the list of packages
-        for (int i = 0; i < Rf_length(package_names); ++i) {
-            const char* pkg_name = CHAR(STRING_ELT(package_names, i));
+        for (int i = 0; i < Rf_length(r_package_names); ++i) {
+            const char* name = CHAR(STRING_ELT(r_package_names, i));
             SEXP r_package =
-                Rf_findVarInFrame(R_NamespaceRegistry, Rf_install(pkg_name));
+                Rf_findVarInFrame(R_NamespaceRegistry, Rf_install(name));
 
             if (TYPEOF(r_package) != ENVSXP) {
                 continue;
