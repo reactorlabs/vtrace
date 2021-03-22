@@ -6,6 +6,16 @@
 #include <sstream>
 #include <string>
 
+/*
+ * This class models R vectors, i.e. vectors of integers, reals, complex
+ * numbers, logicals, raw bytes, and strings, as well as generic vectors
+ * (lists).
+ *
+ * Each tracer Vector has a pointer to the Vector it was a copy of, or nullptr.
+ *
+ * NOTE: Only the VectorTable should be constructing Vectors.
+ */
+
 class Vector {
     static int counter;
 
@@ -27,6 +37,21 @@ class Vector {
         std::stringstream ss;
         ss << static_cast<const void*>(r_vec);
         address_ = ss.str();
+    }
+
+    static bool is_vector(SEXP s) {
+        switch (TYPEOF(s)) {
+        case INTSXP:
+        case REALSXP:
+        case CPLXSXP:
+        case LGLSXP:
+        case RAWSXP:
+        case STRSXP:
+        case VECSXP:
+            return true;
+        default:
+            return false;
+        }
     }
 
     int get_id() const {

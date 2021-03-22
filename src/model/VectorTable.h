@@ -9,6 +9,18 @@
 
 #include "Vector.h"
 
+/*
+ * The VectorTable keeps track of all vectors we have seen. It is responsble
+ * for allocating and deallocating Vector objects.
+ *
+ * The VectorTable uses map to track _live_ vectors, and a set to track
+ * _finalized_ vectors. This is because an address can be allocated to only one
+ * vector at a time, but addresses can be reused if a vector is finalized.
+ *
+ * Currently, the VectorTable does not track R vector deallocation: if an
+ * address is reused, we assume that the vector previously allocated to that
+ * address has been finalized.
+ */
 class VectorTable {
   private:
     // Map of SEXP to (live) tracer Vector pointers
@@ -36,29 +48,21 @@ class VectorTable {
 
         if (!result.second) {
             // For now, assume the old vector was finalized
+            //Rf_error("vector was not finalized before reusing address");
             finalized_.emplace(result.first->second);
             result.first->second = vec;
-            //Rf_error("vector was not finalized before reusing address");
         }
 
         return vec;
     }
 
     void duplicate(SEXP r_input, SEXP r_output) {
+        // For now, create the vector if we don't find it
         auto input = lookup(r_input);
-        if (input == nullptr) {
-        //if (input == nullptr || input->is_finalized()) {
-            // For now, create the vector
-            input = insert(r_input);
-            //Rf_error("unknown vector that is being duplicated");
-        }
 
         // Note that the object alloc callback is called before the object
         // duplicate callback, so we've already seen the vector
         auto output = lookup(r_output);
-        if (output == nullptr) {
-            output = insert(r_output);
-        }
         output->set_copy_of(input);
     }
 
@@ -68,6 +72,7 @@ class VectorTable {
             Vector* vec = result->second;
             table_.erase(result);
 
+            vec->finalize();
             finalized_.emplace(vec);
         } else {
             Rf_error("unknown vector that is being finalized");
@@ -75,12 +80,7 @@ class VectorTable {
     }
 
     Vector* lookup(SEXP r_vec) {
-        auto result = table_.find(r_vec);
-        if (result != table_.end()) {
-            return result->second;
-        } else {
-            return nullptr;
-        }
+        return get_or_create_(r_vec);
     }
 
     void dump_table_to_csv(std::ofstream& file) {
@@ -99,6 +99,18 @@ class VectorTable {
         }
         for (const auto& it : finalized_) {
             dump_entry(it);
+        }
+    }
+
+  private:
+    Vector* get_or_create_(SEXP r_vec) {
+        auto result = table_.find(r_vec);
+        if (result != table_.end()) {
+            return result->second;
+        } else {
+            Vector* vec = new Vector(r_vec);
+            table_.emplace(r_vec, vec);
+            return vec;
         }
     }
 };

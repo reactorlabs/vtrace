@@ -17,7 +17,6 @@
  *      - don't skip "in library" tracing
  *      - maybe have some markers for "phases" of the program
  *  - refactor
- *      - Vector, VectorTable
  *      - callbacks
  *  - clang-format and cppcheck
  */

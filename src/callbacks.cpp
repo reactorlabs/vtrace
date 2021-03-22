@@ -31,21 +31,6 @@ bool is_library_function(const Function* function) {
            function->get_package_name() == "base";
 }
 
-bool is_vector(SEXP s) {
-    switch (TYPEOF(s)) {
-        case INTSXP:
-        case REALSXP:
-        case CPLXSXP:
-        case LGLSXP:
-        case RAWSXP:
-        case STRSXP:
-        case VECSXP:
-            return true;
-        default:
-            return false;
-    }
-}
-
 SEXP r_add_package() {
     function_table.update_packages();
     return R_NilValue;
@@ -105,7 +90,7 @@ void object_duplicate_callback(ContextSPtr /* context */,
                                SEXP /* r_deep */) {
     if (in_library != 0) return;
 
-    if (is_vector(r_input)) {
+    if (Vector::is_vector(r_input)) {
         // TODO: older stuff, record data about vector duplication
         // Most of this handling should be done by the VectorTable
         // Or moved into an EventTable for "duplication" events
@@ -240,7 +225,7 @@ void gc_allocation_callback(ContextSPtr /* context */,
         // TODO: check if function was already inserted?
         // Are functions gc'd? Are addresses reused for functions?
         function_table.insert(r_object);
-    } else if (is_vector(r_object)) {
+    } else if (Vector::is_vector(r_object)) {
         if (in_library != 0) return;
         vector_table.insert(r_object);
     }
@@ -253,7 +238,7 @@ void gc_unmark_callback(ContextSPtr /* context */,
         function_table.lookup(r_object)->finalize();
         // WARN: causes segfault when run
         //function_table.remove(r_object);
-    } else if (is_vector(r_object)) {
+    } else if (Vector::is_vector(r_object)) {
 //        vector_table.finalize(r_object);
     }
 }
