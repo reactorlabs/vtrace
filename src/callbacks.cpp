@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <Rinternals.h>
+
 #include "callbacks.h"
 #include "r_callbacks.h"
 
@@ -9,8 +10,14 @@
 #include "model/VectorTable.h"
 #include "model/Stack.h"
 
+/*
+ * This file contains the implementation of the native callbacks for the
+ * tracer.
+ */
+
 // TODO: lots of refactoring/rewriting needed here
 
+// TODO: this will be handled by an EventTable
 std::vector<std::string> input_addr;
 std::vector<std::string> output_addr;
 std::vector<std::string> type;
@@ -19,23 +26,31 @@ std::vector<std::string> top_function;
 std::vector<std::string> function_id;
 char buffer[1024];
 
-bool loaded = false;
 int in_library = 0;
 
 FunctionTable function_table;
 VectorTable vector_table;
 Stack stack;
 
+// If the function name is "library" and it is in the base package, assume it
+// is the function that loads and attaches packages.
+//
+// This function will likely be removed in the future, when we also trace
+// library loading.
 bool is_library_function(const Function* function) {
     return function->get_name() == "library" &&
            function->get_package_name() == "base";
 }
 
+// When an R package is loaded, the tracer needs to know about it, so it can
+// update the FunctionTable.
 SEXP r_add_package() {
     function_table.update_packages();
     return R_NilValue;
 }
 
+// When a closure is called, we update the FunctionTable and push a new
+// call frame onto the model stack.
 void closure_call_entry_callback(ContextSPtr /* context */,
                                  ApplicationSPtr /* application */,
                                  SEXP r_call,
@@ -43,7 +58,7 @@ void closure_call_entry_callback(ContextSPtr /* context */,
                                  SEXP r_args,
                                  SEXP r_rho) {
     Function* function = function_table.lookup(r_op);
-    function -> called();
+    function->called();
 
     StackFrame frame =
         StackFrame::from_call(new Call(function, r_call, r_args, r_rho));
@@ -55,6 +70,8 @@ void closure_call_entry_callback(ContextSPtr /* context */,
     }
 }
 
+// When a closure is exited, we pop the model stack and check that there is no
+// stack frame mismatch.
 void closure_call_exit_callback(ContextSPtr /* context */,
                                 ApplicationSPtr /* application */,
                                 SEXP r_call,
@@ -83,6 +100,9 @@ void closure_call_exit_callback(ContextSPtr /* context */,
     }
 }
 
+// Record object duplication, but only if it is a vector.
+//
+// TODO: figure out what vector_copy and matrix_copy do.
 void object_duplicate_callback(ContextSPtr /* context */,
                                ApplicationSPtr /* application */,
                                SEXP r_input,
@@ -120,6 +140,7 @@ void object_duplicate_callback(ContextSPtr /* context */,
     }
 }
 
+// When the vtrace package is being unloaded, dump the data out to CSV files.
 void application_unload_callback(ContextSPtr /* context */,
                                  ApplicationSPtr /* application */) {
     std::ofstream file("duplication.csv");
@@ -140,6 +161,8 @@ void application_unload_callback(ContextSPtr /* context */,
     file3.close();
 }
 
+// This might involve binding a function to a name, so update the function
+// table.
 void variable_definition_callback(ContextSPtr /* context */,
                                   ApplicationSPtr /* application */,
                                   SEXP r_symbol,
@@ -148,6 +171,8 @@ void variable_definition_callback(ContextSPtr /* context */,
     function_table.update(r_value, CHAR(PRINTNAME(r_symbol)), r_rho);
 }
 
+// This might involve binding a function to a name, so update the function
+// table.
 void variable_assignment_callback(ContextSPtr /* context */,
                                   ApplicationSPtr /* application */,
                                   SEXP r_symbol,
@@ -156,6 +181,8 @@ void variable_assignment_callback(ContextSPtr /* context */,
     function_table.update(r_value, CHAR(PRINTNAME(r_symbol)), r_rho);
 }
 
+// This might involve binding a function to a name, so update the function
+// table.
 void variable_lookup_callback(ContextSPtr /* context */,
                               ApplicationSPtr /* application */,
                               SEXP r_symbol,
@@ -185,6 +212,8 @@ void context_exit_callback(ContextSPtr /* context */,
     }
 }
 
+// A non-local return has occurred, so unwind the stack until we reach the
+// target context.
 void context_jump_callback(ContextSPtr context,
                            ApplicationSPtr application,
                            void* call_context) {
@@ -218,6 +247,8 @@ void context_jump_callback(ContextSPtr context,
     Rf_error("cannot find matching context while unwinding\n");
 }
 
+// Object allocation callback. For now, we only care about functions and
+// vectors.
 void gc_allocation_callback(ContextSPtr /* context */,
                             ApplicationSPtr /* application */,
                             SEXP r_object) {
@@ -231,6 +262,9 @@ void gc_allocation_callback(ContextSPtr /* context */,
     }
 }
 
+// Object deallocation callback.
+// NOTE: this callback must not allocate R memory, otherwise a recusrive GC
+// invocation may occur!
 void gc_unmark_callback(ContextSPtr /* context */,
                         ApplicationSPtr /* application */,
                         SEXP r_object) {
@@ -241,6 +275,6 @@ void gc_unmark_callback(ContextSPtr /* context */,
             //function_table.remove(r_object);
         }
     } else if (Vector::is_vector(r_object)) {
-       vector_table.finalize(r_object);
+        vector_table.finalize(r_object);
     }
 }

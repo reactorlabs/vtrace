@@ -16,8 +16,6 @@
  *      - look into vector_copy and matrix_copy callbacks
  *      - don't skip "in library" tracing
  *      - maybe have some markers for "phases" of the program
- *  - refactor
- *      - callbacks
  *  - clang-format and cppcheck
  */
 
