@@ -64,6 +64,16 @@ class FunctionTable {
         return get_or_create_(r_closure);
     }
 
+    Function* lookup_no_create(SEXP r_closure) {
+        auto result = table_.find(r_closure);
+
+        if (result != table_.end()) {
+            return result->second;
+        } else {
+            return nullptr;
+        }
+    }
+
     // Update the function with a new name, if necessary and possible
     void update(SEXP r_value, const char* name, SEXP r_rho) {
         SEXP r_closure = unwrap_function_(r_value);

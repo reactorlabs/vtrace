@@ -235,10 +235,12 @@ void gc_unmark_callback(ContextSPtr /* context */,
                         ApplicationSPtr /* application */,
                         SEXP r_object) {
     if (TYPEOF(r_object) == CLOSXP) {
-        function_table.lookup(r_object)->finalize();
-        // WARN: causes segfault when run
-        //function_table.remove(r_object);
+        if (auto function = function_table.lookup_no_create(r_object)) {
+            function->finalize();
+            // WARN: causes segfault when run
+            //function_table.remove(r_object);
+        }
     } else if (Vector::is_vector(r_object)) {
-//        vector_table.finalize(r_object);
+       vector_table.finalize(r_object);
     }
 }

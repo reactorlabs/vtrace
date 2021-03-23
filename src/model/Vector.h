@@ -106,4 +106,4 @@ class Vector {
 
 int Vector::counter = 0;
 
-#endif // VTRACE_RVECTOR_H
+#endif // VTRACE_VECTOR_H

@@ -75,7 +75,8 @@ class VectorTable {
             vec->finalize();
             finalized_.emplace(vec);
         } else {
-            Rf_error("unknown vector that is being finalized");
+            // WARN: causes recursive GC invocation
+            //Rf_error("unknown vector that is being finalized");
         }
     }
 
@@ -115,6 +116,4 @@ class VectorTable {
     }
 };
 
-
-
-#endif // VTRACE_RVECTOR_TABLE_H
+#endif // VTRACE_VECTOR_TABLE_H
