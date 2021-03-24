@@ -16,10 +16,15 @@
  * The FunctionTable will also try to determine the names of each function.
  * This happens upon initialization, whenever a function is updated, and
  * whenever the package list is updated.
+ *
+ * Live functions are maintained by a map (of SEXPs to Function*), and
+ * deallocated functions are maintained by a set.
  */
 class FunctionTable {
-    // Map of SEXP to tracer Function pointers
+    // Map of SEXP to Function pointers (representing live R functions)
     std::unordered_map<SEXP, Function*> table_;
+    // Set of Function pointers (representing finalized R functions)
+    std::unordered_set<Function*> finalized_;
     // Set of packages that have already been seen and processed.
     std::unordered_set<SEXP> seen_packages_;
 
@@ -34,6 +39,9 @@ class FunctionTable {
         for (auto& it : table_) {
             delete it.second;
         }
+        for (auto& it : finalized_) {
+            delete it;
+        }
     }
 
     // Insert an SEXP into the table, creating a Function object
@@ -41,37 +49,32 @@ class FunctionTable {
         Function* function = new Function(r_closure);
         auto result = table_.emplace(r_closure, function);
 
-        // If function is already in the table, replace the existing one
+        // If function is already in the table, replace the existing one.
+        // We're assuming the old function was finalized.
+        // NOTE: For some reason, gc_unmark_callback isn't catching everything
         if (!result.second) {
-            delete result.first->second;
+            finalized_.emplace(result.first->second);
             result.first->second = function;
         }
     }
 
-    // Remove the SEXP and function object from the table
-    void remove(SEXP r_closure) {
+    // Move the function object to the finalized set
+    // NOTE: This function must not allocate R memory! Calling the Function
+    // constructor will allocate R memory.
+    void finalize(SEXP r_closure) {
         auto result = table_.find(r_closure);
-
         if (result != table_.end()) {
             Function* function = result->second;
             table_.erase(result);
-            delete function;
+            finalized_.emplace(function);
         }
+        // NOTE: If we are finalizing something we didn't know about, not much
+        // we can do.
     }
 
     // Find or create the Function corresponding to the SEXP
     Function* lookup(SEXP r_closure) {
         return get_or_create_(r_closure);
-    }
-
-    Function* lookup_no_create(SEXP r_closure) {
-        auto result = table_.find(r_closure);
-
-        if (result != table_.end()) {
-            return result->second;
-        } else {
-            return nullptr;
-        }
     }
 
     // Update the function with a new name, if necessary and possible
@@ -125,13 +128,19 @@ class FunctionTable {
     // Dump the FunctionTable as a CSV file. Skip functions that were never
     // called.
     void dump_table_to_csv(std::ofstream& file) {
-        file << "id,name,hash,definition\n";
-        for (const auto& it: table_) {
-            auto fun = it.second;
+        auto dump_entry = [&file](Function* fun) {
             if (fun->is_called()) {
                 file << fun->get_id() << "," << fun->get_name() << ","
                      << fun->get_hash() << "," << fun->get_definition() << "\n";
             }
+        };
+
+        file << "id,name,hash,definition\n";
+        for (const auto& it: table_) {
+            dump_entry(it.second);
+        }
+        for (const auto& it : finalized_) {
+            dump_entry(it);
         }
     }
 

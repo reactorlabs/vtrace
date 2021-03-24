@@ -12,9 +12,9 @@
  *  - implementation
  *      - EventTable to track alloc, duplicate, dealloc
  *          - Later: track closure entry/exit
- *      - Debug issue with tracking deallocs
  *      - look into vector_copy and matrix_copy callbacks
- *      - don't skip "in library" tracing
+ *      - don't skip "in library" tracing, look into why some allocs/deallocs
+ *        are not observed
  *      - maybe have some markers for "phases" of the program
  *  - clang-format and cppcheck
  */

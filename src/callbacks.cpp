@@ -26,11 +26,12 @@ std::vector<std::string> top_function;
 std::vector<std::string> function_id;
 char buffer[1024];
 
-int in_library = 0;
-
 FunctionTable function_table;
 VectorTable vector_table;
 Stack stack;
+
+static constexpr bool SKIP_LIBRARY = true;
+int in_library = 0;
 
 // If the function name is "library" and it is in the base package, assume it
 // is the function that loads and attaches packages.
@@ -108,7 +109,7 @@ void object_duplicate_callback(ContextSPtr /* context */,
                                SEXP r_input,
                                SEXP r_output,
                                SEXP /* r_deep */) {
-    if (in_library != 0) return;
+    if (SKIP_LIBRARY && in_library != 0) return;
 
     if (Vector::is_vector(r_input)) {
         // TODO: older stuff, record data about vector duplication
@@ -252,12 +253,10 @@ void context_jump_callback(ContextSPtr context,
 void gc_allocation_callback(ContextSPtr /* context */,
                             ApplicationSPtr /* application */,
                             SEXP r_object) {
-    if (TYPEOF(r_object) == CLOSXP) {
-        // TODO: check if function was already inserted?
-        // Are functions gc'd? Are addresses reused for functions?
+    if (Function::is_function(r_object)) {
         function_table.insert(r_object);
     } else if (Vector::is_vector(r_object)) {
-        if (in_library != 0) return;
+        if (SKIP_LIBRARY && in_library != 0) return;
         vector_table.insert(r_object);
     }
 }
@@ -268,13 +267,10 @@ void gc_allocation_callback(ContextSPtr /* context */,
 void gc_unmark_callback(ContextSPtr /* context */,
                         ApplicationSPtr /* application */,
                         SEXP r_object) {
-    if (TYPEOF(r_object) == CLOSXP) {
-        if (auto function = function_table.lookup_no_create(r_object)) {
-            function->finalize();
-            // WARN: causes segfault when run
-            //function_table.remove(r_object);
-        }
+    if (Function::is_function(r_object)) {
+        function_table.finalize(r_object);
     } else if (Vector::is_vector(r_object)) {
+        if (SKIP_LIBRARY && in_library != 0) return;
         vector_table.finalize(r_object);
     }
 }

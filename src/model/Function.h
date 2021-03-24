@@ -35,7 +35,6 @@ class Function {
     std::string definition_ = NotComputed;
     std::string hash_ = NotComputed;
     int called_ = 0;
-    bool finalized_ = false;
 
   public:
     explicit Function(SEXP r_op)
@@ -62,6 +61,17 @@ class Function {
                 package_name_ =
                     CHAR(STRING_ELT(R_NamespaceEnvSpec(r_lexenv), 0));
             }
+        }
+    }
+
+    static bool is_function(SEXP s) {
+        switch (TYPEOF(s)) {
+        case CLOSXP:
+        case BUILTINSXP:
+        case SPECIALSXP:
+            return true;
+        default:
+            return false;
         }
     }
 
@@ -143,10 +153,6 @@ class Function {
 
     bool is_called() const {
         return called_;
-    }
-
-    void finalize() {
-        finalized_ = true;
     }
 
   private:

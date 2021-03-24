@@ -25,7 +25,6 @@ class Vector {
     int length_;
     std::string address_;
     Vector* copy_of_ = nullptr;
-    bool finalized_ = false;
 
   public:
     explicit Vector(SEXP r_vec)
@@ -73,14 +72,6 @@ class Vector {
 
     const std::string& get_address() const {
         return address_;
-    }
-
-    bool is_finalized() const {
-        return finalized_;
-    }
-
-    void finalize() {
-        finalized_ = true;
     }
 
     bool is_copy() const {
