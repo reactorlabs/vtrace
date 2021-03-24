@@ -9,7 +9,7 @@ def Settings( **kwargs ):
     'flags': [
       '-x',
       'c++',
-      'std=gnu++11',
+      'std=gnu++17',
       '-I'+DirectoryOfThisScript()+'/../R-dyntrace/include',
       '-DNDEBUG',
       '-I'+DirectoryOfThisScript()+'/../instrumentr/inst/include',
@@ -17,11 +17,9 @@ def Settings( **kwargs ):
       '-O2',
       '-ggdb3',
       '-fpic',
-#      '-Wall',
-#      '-Wextra',
-#      '-Werror',
-#      '-Wno-long-long',
-#      '-Wno-variadic-macros',
-#      '-fexceptions',
+      '-Wall',
+      '-Wextra',
+      '-pedantic',
+      '-fexceptions',
     ]
   }

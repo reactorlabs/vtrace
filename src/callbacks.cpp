@@ -1,14 +1,23 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
-#include "Rinternals.h"
+#include <Rinternals.h>
+
 #include "callbacks.h"
 #include "r_callbacks.h"
 
-#include "FunctionTable.h"
-#include "RVectorTable.h"
-#include "Stack.h"
+#include "model/FunctionTable.h"
+#include "model/VectorTable.h"
+#include "model/Stack.h"
 
+/*
+ * This file contains the implementation of the native callbacks for the
+ * tracer.
+ */
+
+// TODO: lots of refactoring/rewriting needed here
+
+// TODO: this will be handled by an EventTable
 std::vector<std::string> input_addr;
 std::vector<std::string> output_addr;
 std::vector<std::string> type;
@@ -17,31 +26,39 @@ std::vector<std::string> top_function;
 std::vector<std::string> function_id;
 char buffer[1024];
 
-bool loaded = false;
 int in_library = 0;
 
 FunctionTable function_table;
-RVectorTable vector_table;
+VectorTable vector_table;
 Stack stack;
 
+// If the function name is "library" and it is in the base package, assume it
+// is the function that loads and attaches packages.
+//
+// This function will likely be removed in the future, when we also trace
+// library loading.
 bool is_library_function(const Function* function) {
     return function->get_name() == "library" &&
            function->get_package_name() == "base";
 }
 
+// When an R package is loaded, the tracer needs to know about it, so it can
+// update the FunctionTable.
 SEXP r_add_package() {
     function_table.update_packages();
     return R_NilValue;
 }
 
-void closure_call_entry_callback(ContextSPtr context,
-                                 ApplicationSPtr application,
+// When a closure is called, we update the FunctionTable and push a new
+// call frame onto the model stack.
+void closure_call_entry_callback(ContextSPtr /* context */,
+                                 ApplicationSPtr /* application */,
                                  SEXP r_call,
                                  SEXP r_op,
                                  SEXP r_args,
                                  SEXP r_rho) {
     Function* function = function_table.lookup(r_op);
-    function -> called();
+    function->called();
 
     StackFrame frame =
         StackFrame::from_call(new Call(function, r_call, r_args, r_rho));
@@ -53,13 +70,15 @@ void closure_call_entry_callback(ContextSPtr context,
     }
 }
 
-void closure_call_exit_callback(ContextSPtr context,
-                                ApplicationSPtr application,
+// When a closure is exited, we pop the model stack and check that there is no
+// stack frame mismatch.
+void closure_call_exit_callback(ContextSPtr /* context */,
+                                ApplicationSPtr /* application */,
                                 SEXP r_call,
                                 SEXP r_op,
                                 SEXP r_args,
                                 SEXP r_rho,
-                                SEXP r_result) {
+                                SEXP /* r_result */) {
     Function* function = function_table.lookup(r_op);
 
     if (is_library_function(function)) {
@@ -81,22 +100,25 @@ void closure_call_exit_callback(ContextSPtr context,
     }
 }
 
-void object_duplicate_callback(ContextSPtr context,
-                               ApplicationSPtr application,
+// Record object duplication, but only if it is a vector.
+//
+// TODO: figure out what vector_copy and matrix_copy do.
+void object_duplicate_callback(ContextSPtr /* context */,
+                               ApplicationSPtr /* application */,
                                SEXP r_input,
                                SEXP r_output,
-                               SEXP r_deep) {
+                               SEXP /* r_deep */) {
     if (in_library != 0) return;
 
-    auto t = TYPEOF(r_input);
-    if (t == INTSXP || t == REALSXP || t == CPLXSXP || t == LGLSXP ||
-        t == RAWSXP || t == STRSXP || t == VECSXP) {
-        // older stuff, record data about vector duplication
-        sprintf(buffer, "%p", r_input);
+    if (Vector::is_vector(r_input)) {
+        // TODO: older stuff, record data about vector duplication
+        // Most of this handling should be done by the VectorTable
+        // Or moved into an EventTable for "duplication" events
+        sprintf(buffer, "%p", (void*)r_input);
         std::string input = std::string(buffer);
         input_addr.push_back(input);
 
-        sprintf(buffer, "%p", r_output);
+        sprintf(buffer, "%p", (void*)r_output);
         std::string output = std::string(buffer);
         output_addr.push_back(output);
 
@@ -114,74 +136,70 @@ void object_duplicate_callback(ContextSPtr context,
         }
 
         // newer stuff, create vector objects and add to vector table
-        RVector* src = vector_table.lookup_by_addr(input);
-        RVector* dst = vector_table.lookup_by_addr(output);
-        if (!src) {
-            src = new RVector(input, TYPEOF(r_input), Rf_length(r_input));
-            vector_table.insert(src);
-        }
-        if (!dst) {
-            dst = new RVector(output, TYPEOF(r_input), Rf_length(r_input));
-            vector_table.insert(dst);
-        }
-        dst->set_copy_of(src->get_id());
+        vector_table.duplicate(r_input, r_output);
     }
 }
 
-void application_unload_callback(ContextSPtr context,
-                                 ApplicationSPtr application) {
+// When the vtrace package is being unloaded, dump the data out to CSV files.
+void application_unload_callback(ContextSPtr /* context */,
+                                 ApplicationSPtr /* application */) {
     std::ofstream file("duplication.csv");
 
     file << "input_addr,output_addr,type,length,fun,fun_id\n";
-    for (int i = 0; i < input_addr.size(); ++i) {
+    for (unsigned int i = 0; i < input_addr.size(); ++i) {
         file << input_addr[i] << "," << output_addr[i] << "," << type[i] << ","
              << length[i] << "," << top_function[i] << "," << function_id[i] << "\n";
     }
     file.close();
 
-    std::ofstream file2("duplication_functions.csv");
+    std::ofstream file2("functions.csv");
     function_table.dump_table_to_csv(file2);
     file2.close();
 
-
-    std::ofstream file3("duplication_vectors.csv");
+    std::ofstream file3("vectors.csv");
     vector_table.dump_table_to_csv(file3);
     file3.close();
 }
 
-void variable_definition_callback(ContextSPtr context,
-                                  ApplicationSPtr application,
+// This might involve binding a function to a name, so update the function
+// table.
+void variable_definition_callback(ContextSPtr /* context */,
+                                  ApplicationSPtr /* application */,
                                   SEXP r_symbol,
                                   SEXP r_value,
                                   SEXP r_rho) {
     function_table.update(r_value, CHAR(PRINTNAME(r_symbol)), r_rho);
 }
 
-void variable_assignment_callback(ContextSPtr context,
-                                  ApplicationSPtr application,
+// This might involve binding a function to a name, so update the function
+// table.
+void variable_assignment_callback(ContextSPtr /* context */,
+                                  ApplicationSPtr /* application */,
                                   SEXP r_symbol,
                                   SEXP r_value,
                                   SEXP r_rho) {
     function_table.update(r_value, CHAR(PRINTNAME(r_symbol)), r_rho);
 }
 
-void variable_lookup_callback(ContextSPtr context,
-                              ApplicationSPtr application,
+// This might involve binding a function to a name, so update the function
+// table.
+void variable_lookup_callback(ContextSPtr /* context */,
+                              ApplicationSPtr /* application */,
                               SEXP r_symbol,
                               SEXP r_value,
                               SEXP r_rho) {
     function_table.update(r_value, CHAR(PRINTNAME(r_symbol)), r_rho);
 }
 
-void context_entry_callback(ContextSPtr context,
-                            ApplicationSPtr application,
+void context_entry_callback(ContextSPtr /* context */,
+                            ApplicationSPtr /* application */,
                             void* call_context) {
     StackFrame frame = StackFrame::from_context(call_context);
     stack.push(frame);
 }
 
-void context_exit_callback(ContextSPtr context,
-                           ApplicationSPtr application,
+void context_exit_callback(ContextSPtr /* context */,
+                           ApplicationSPtr /* application */,
                            void* call_context) {
     StackFrame frame = stack.pop();
 
@@ -194,6 +212,8 @@ void context_exit_callback(ContextSPtr context,
     }
 }
 
+// A non-local return has occurred, so unwind the stack until we reach the
+// target context.
 void context_jump_callback(ContextSPtr context,
                            ApplicationSPtr application,
                            void* call_context) {
@@ -227,22 +247,34 @@ void context_jump_callback(ContextSPtr context,
     Rf_error("cannot find matching context while unwinding\n");
 }
 
-void gc_allocation_callback(ContextSPtr context,
-                            ApplicationSPtr application,
+// Object allocation callback. For now, we only care about functions and
+// vectors.
+void gc_allocation_callback(ContextSPtr /* context */,
+                            ApplicationSPtr /* application */,
                             SEXP r_object) {
     if (TYPEOF(r_object) == CLOSXP) {
         // TODO: check if function was already inserted?
         // Are functions gc'd? Are addresses reused for functions?
         function_table.insert(r_object);
+    } else if (Vector::is_vector(r_object)) {
+        if (in_library != 0) return;
+        vector_table.insert(r_object);
     }
 }
 
-void gc_unmark_callback(ContextSPtr context,
-                        ApplicationSPtr application,
+// Object deallocation callback.
+// NOTE: this callback must not allocate R memory, otherwise a recusrive GC
+// invocation may occur!
+void gc_unmark_callback(ContextSPtr /* context */,
+                        ApplicationSPtr /* application */,
                         SEXP r_object) {
     if (TYPEOF(r_object) == CLOSXP) {
-        function_table.lookup(r_object)->finalize();
-        // WARN: causes segfault when run
-        //function_table.remove(r_object);
+        if (auto function = function_table.lookup_no_create(r_object)) {
+            function->finalize();
+            // WARN: causes segfault when run
+            //function_table.remove(r_object);
+        }
+    } else if (Vector::is_vector(r_object)) {
+        vector_table.finalize(r_object);
     }
 }

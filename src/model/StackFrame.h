@@ -3,13 +3,27 @@
 
 #include "Call.h"
 
+/*
+ * This class models stack frames on the R stack. A stack frame may be a call
+ * (representing an R function) or a context (used by R to implement non-local
+ * returns). This is implemented as a tagged union.
+ *
+ * Note that native calls are not modelled.
+ *
+ * The constructor is private, because a StackFrame must be created using one
+ * of the static methods, to ensure we properly construct a call or context
+ * frame.
+ */
 class StackFrame {
-  public:
     enum class Type { Call, Context };
 
-    ~StackFrame() {
-    }
+    Type type_;
+    union {
+        Call* call_;
+        void* context_;
+    };
 
+  public:
     static StackFrame from_call(Call* call) {
         return StackFrame(call, Type::Call);
     }
@@ -19,7 +33,7 @@ class StackFrame {
     }
 
     bool is_call() const {
-        return (type_ == Type::Call);
+        return type_ == Type::Call;
     }
 
     Call* as_call() {
@@ -31,7 +45,7 @@ class StackFrame {
     }
 
     bool is_context() const {
-        return (type_ == Type::Context);
+        return type_ == Type::Context;
     }
 
     void* as_context() {
@@ -43,16 +57,10 @@ class StackFrame {
     }
 
   private:
-    Type type_;
-    union {
-        Call* call_;
-        void* context_;
-    };
-
-    StackFrame(void* ptr, Type type): type_(type) {
+    StackFrame(void* ptr, Type type) : type_(type) {
         switch (type) {
         case Type::Call:
-            call_ = (Call*) ptr;
+            call_ = static_cast<Call*>(ptr);
             break;
         case Type::Context:
             context_ = ptr;
@@ -61,4 +69,4 @@ class StackFrame {
     }
 };
 
-#endif /* VTRACE_STACK_FRAME_H */
+#endif // VTRACE_STACK_FRAME_H

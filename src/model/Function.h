@@ -6,41 +6,59 @@
 #include <Rdyntrace.h>
 #include <string>
 
-#include "picosha2.h"
+#include "../lib/picosha2.h"
 
-static const std::string NotComputed = "<not computed>";
-static int fun_counter = 0;
+static constexpr char NotComputed[] = "<not computed>";
+static constexpr int FUN_DEF_MAX = 60;
 
+/*
+ * This class models R function objects, which include builtin functions,
+ * special functions, and closures.
+ *
+ * The function's definition (a string containing the first FUN_DEF_MAX lines
+ * of the function's R source code) and hash are computed only if the function
+ * has been called.
+ *
+ * The hash is just a convenient way of summarizing the function definition; we
+ * use SHA256 hex string.
+ *
+ * NOTE: Only the FunctionTable should be constructing Functions.
+ */
 class Function {
+    static int counter;
+
+    int id_;
+    SEXP r_op_;
+    SEXPTYPE type_;
+    std::string name_;
+    std::string package_name_;
+    std::string definition_ = NotComputed;
+    std::string hash_ = NotComputed;
+    int called_ = 0;
+    bool finalized_ = false;
+
   public:
     explicit Function(SEXP r_op)
-        : id_(fun_counter++)
+        : id_(counter++)
         , r_op_(r_op)
-        , definition_(NotComputed)
-        , hash_(NotComputed)
-        , called_(0) {
-        type_ = TYPEOF(r_op);
+        , type_(TYPEOF(r_op)) {
 
+        // Try to initialize the package name and function name
         if (type_ == BUILTINSXP || type_ == SPECIALSXP) {
             package_name_ = "base";
             name_ = dyntrace_get_c_function_name(r_op);
         } else {
+            // In this case, we'll compute the function name later
             SEXP r_lexenv = CLOENV(r_op);
 
             if (r_lexenv == R_GlobalEnv) {
                 package_name_ = "global";
-            }
-
-            else if (r_lexenv == R_BaseEnv || r_lexenv == R_BaseNamespace) {
+            } else if (r_lexenv == R_BaseEnv || r_lexenv == R_BaseNamespace) {
                 package_name_ = "base";
-            }
-
-            else if (R_IsPackageEnv(r_lexenv)) {
-                package_name_ = CHAR(STRING_ELT(R_PackageEnvName(r_lexenv), 0));
-
-            }
-
-            else if (R_IsNamespaceEnv(r_lexenv)) {
+            } else if (R_IsPackageEnv(r_lexenv)) {
+                package_name_ =
+                    CHAR(STRING_ELT(R_PackageEnvName(r_lexenv), 0));
+            } else if (R_IsNamespaceEnv(r_lexenv)) {
                 package_name_ =
                     CHAR(STRING_ELT(R_NamespaceEnvSpec(r_lexenv), 0));
             }
@@ -91,6 +109,7 @@ class Function {
         return package_name_;
     }
 
+    // Qualified name is: `<package>::<name>` or `<name>` if there is no package
     std::string get_qualified_name() const {
         std::string qualified;
 
@@ -116,8 +135,8 @@ class Function {
         return hash_;
     }
 
+    // Function has been called, so initialize its definition and hash
     void called() {
-        set_definition_();
         set_hash_();
         ++called_;
     }
@@ -127,36 +146,28 @@ class Function {
     }
 
     void finalize() {
-        finalized = true;
+        finalized_ = true;
     }
 
   private:
-    int id_;
-    bool finalized = false;
-    SEXP r_op_;
-    SEXPTYPE type_;
-    std::string name_;
-    std::string package_name_;
-    std::string definition_;
-    std::string hash_;
-    int called_;
-
     const std::string& set_hash_() {
         if (hash_ == NotComputed) {
             hash_ = picosha2::hash256_hex_string(set_definition_());
         }
-
         return hash_;
     }
 
+    // TODO: some function is too long so we trim to FUN_DEF_MAX lines, which one is it?
     const std::string& set_definition_() {
         if (definition_ == NotComputed) {
-            // TODO: which function definition is too long???
+            // Construct an R call to deparse the function, so we can get its
+            // definition as a string
             SEXP deparse_call =
-                Rf_lang3(Rf_install("deparse"), r_op_, ScalarInteger(60));
+                Rf_lang3(Rf_install("deparse"), r_op_, ScalarInteger(FUN_DEF_MAX));
             SET_TAG(CDDR(deparse_call), Rf_install("nlines"));
             SEXP def = Rf_eval(deparse_call, R_BaseEnv);
 
+            // def is an R vector, now we convert it to a C++ string
             std::string to_ret = "";
             for (int i = 0; i < Rf_length(def); ++i) {
                 auto name = STRING_ELT(def, i);
@@ -173,4 +184,6 @@ class Function {
     }
 };
 
-#endif /* VTRACE_FUNCTION_H */
+int Function::counter = 0;
+
+#endif // VTRACE_FUNCTION_H

@@ -1,0 +1,2 @@
+PKG_CFLAGS = -Wall -Wextra -pedantic
+PKG_CXXFLAGS = -Wall -Wextra -pedantic -fexceptions
