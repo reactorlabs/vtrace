@@ -12,10 +12,15 @@
  *  - implementation
  *      - EventTable to track alloc, duplicate, dealloc
  *          - Later: track closure entry/exit
- *      - look into vector_copy and matrix_copy callbacks
  *      - don't skip "in library" tracing, look into why some allocs/deallocs
  *        are not observed
  *      - maybe have some markers for "phases" of the program
+ *          - mark function that marks a vector
+ *              - need to recursively mark
+ *      - don't create a new Function if a closure is allocated multiple times
+ *  - next steps:
+ *      - "derivation tree" of vectors, i.e. trace builtins/specials to make a
+ *        graph of vectors and what they are derived from
  *  - clang-format and cppcheck
  */
 
@@ -38,7 +43,6 @@ static const R_CallMethodDef callMethods[] = {
     {"get_closure_call_exit_callback", (DL_FUNC) &r_get_closure_call_exit_callback, 0},
     // TODO: object_coerce_callback
     {"get_object_duplicate_callback", (DL_FUNC) &r_get_object_duplicate_callback, 0},
-    // TODO vector_copy_callback, matrix_copy_callback
     {"get_application_unload_callback", (DL_FUNC) &r_get_application_unload_callback, 0},
     {"get_variable_definition_callback", (DL_FUNC) &r_get_variable_definition_callback, 0},
     {"get_variable_assignment_callback", (DL_FUNC) &r_get_variable_assignment_callback, 0},

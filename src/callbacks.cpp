@@ -103,7 +103,16 @@ void closure_call_exit_callback(ContextSPtr /* context */,
 
 // Record object duplication, but only if it is a vector.
 //
-// TODO: figure out what vector_copy and matrix_copy do.
+// Internally, R allocates the destination vector before copying elements
+// into it. R-dyntrace invokes this callback right before R's duplicate
+// function returns; therefore, the r_input and r_output should have been
+// seen by the allocation callback.
+//
+// Note: There are two related hooks that we can ignore: vector_copy and
+// matrix_copy. These hooks are called in R's vectorCopy and matrixCopy
+// functions, which are used by R in various constructors to copy (and recycle
+// if necessary) elements. These are internal and low-level operations, and
+// semantically, are not the same as duplicating an entire SEXP.
 void object_duplicate_callback(ContextSPtr /* context */,
                                ApplicationSPtr /* application */,
                                SEXP r_input,
